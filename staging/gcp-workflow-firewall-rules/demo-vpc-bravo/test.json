@@ -1,0 +1,14 @@
+{
+    "rules": [
+        {
+            "bravo": "blue"
+        }
+    ],
+    "laws": [
+        {
+            "delta": "dark"
+        }
+    ],
+    "ingress_rules": [],
+    "egress_rules": []
+}

@@ -1,0 +1,14 @@
+{
+    "rules": [
+        {
+            "alpha": "azure"
+        }
+    ],
+    "laws": [
+        {
+            "charlie": "chartreuse"
+        }
+    ],
+    "ingress_rules": [],
+    "egress_rules": []
+}
