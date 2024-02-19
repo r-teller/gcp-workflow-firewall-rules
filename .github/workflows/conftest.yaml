@@ -86,7 +86,7 @@ jobs:
             const issue_number = context.issue.number;
             const issuesJson = fs.readFileSync('./result.json', {encoding: 'utf8'});
             const issues = JSON.parse(issuesJson);
-
+            console.log(issues);
             let tableHeader = '| Message | Network | Project | Rule ID | Severity |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- |\n';
             let tableRows = issues.map(issue => {
