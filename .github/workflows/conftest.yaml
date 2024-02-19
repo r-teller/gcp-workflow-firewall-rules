@@ -84,11 +84,11 @@ jobs:
               return `| ${index + 1} |${action} | ${namespace} | ${ruleName} | ${severity} | ${severityIndicator} |`;
             }).join('\n');
 
-            # // Construct detailed messages
-            # let detailedMessages = "#### Detailed Messages:\n\n" + issues.map((issue, index) => {
-            #   const { msg, metadata } = issue;
-            #   return `${index + 1}. \n - Error Message: ${msg} \n - Severity: ${metadata?.severity ?? 'N/A'} \n - Project: ${metadata?.project ?? 'N/A'} \n - Network: ${metadata?.network ?? 'N/A'}`;
-            # }).join('\n\n');
+            //# // Construct detailed messages
+            //# let detailedMessages = "#### Detailed Messages:\n\n" + issues.map((issue, index) => {
+            //#   const { msg, metadata } = issue;
+            //#   return `${index + 1}. \n - Error Message: ${msg} \n - Severity: ${metadata?.severity ?? 'N/A'} \n - Project: ${metadata?.project ?? 'N/A'} \n - Network: ${metadata?.network ?? 'N/A'}`;
+            //# }).join('\n\n');
 
             let detailedMessages = "#### Detailed Messages:\n\n" + 
             "| # | Details |\n" + 
