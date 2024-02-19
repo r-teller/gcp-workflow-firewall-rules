@@ -3,8 +3,8 @@ name: 'Terraform Apply on Merge'
 on:
   pull_request:
     types: [closed]
-    branches:
-      - main
+    # branches:
+    #   - main
 
 # Use a concurrency group to ensure serialized execution
 concurrency: 
@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   terraform-apply:
-    if: ${{ github.event.pull_request.merged == true }}
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     name: 'Terraform Apply'
     runs-on: ubuntu-latest
 
