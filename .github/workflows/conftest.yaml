@@ -47,12 +47,14 @@ jobs:
                 -v "$(pwd)":/project \
                 openpolicyagent/conftest \
                 test --all-namespaces ./tfplan.json --output json > ./result.json
+          jq [.[].failures[]?] > ./failures.json
         continue-on-error: true
 
       - name: Check for non-low severity issues
         id: check_results
         run: |
-          result=$(jq '[.[] | .failures[]? | select(.metadata.severity != "LOW")]' ./result.json)
+
+          result=$(jq '[.[] | select(.metadata.severity != "LOW")]' ./failures.json )
           if [ -z "$result" ]; then
             echo "No issues with severity higher than LOW found."
             echo "::set-output name=approve::true"
@@ -84,18 +86,19 @@ jobs:
           script: |
             const fs = require('fs');
             const issue_number = context.issue.number;
-            const issuesJson = fs.readFileSync('./result.json', {encoding: 'utf8'});
+            const issuesJson = fs.readFileSync('./failures.json', {encoding: 'utf8'});
             const issues = JSON.parse(issuesJson);
             console.log(issues);
-            let tableHeader = '| Message | Network | Project | Rule ID | Severity |\n';
+            let tableHeader = '| Message | Network | Project | Rule ID | Severity | Indicator |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- |\n';
             let tableRows = issues.map(issue => {
               const { msg, metadata } = issue;
               const network = metadata?.network ?? 'N/A'; // Use nullish coalescing and optional chaining
               const project = metadata?.project ?? 'N/A';
               const ruleID = metadata?.ruleID ?? 'N/A';
+              const severityIndicator = metadata?.severity === 'LOW' ? '✅' : '🔴';
               const severity = metadata?.severity ?? 'N/A';
-              return `| ${msg} | ${network} | ${project} | ${ruleID} | ${severity} |`;
+              return `| ${msg} | ${network} | ${project} | ${ruleID} | ${severity} | ${severityIndicator} |`;
             }).join('\n');
             const commentBody = `### Issues Requiring Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}`;
             
