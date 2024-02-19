@@ -2,7 +2,7 @@ name: 'Terraform Apply on Merge'
 
 on:
   pull_request:
-    types: [closed]
+    # types: [closed]
     branches:
       - main
 
