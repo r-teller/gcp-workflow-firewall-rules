@@ -46,7 +46,7 @@ jobs:
                 --rm \
                 -v "$(pwd)":/project \
                 openpolicyagent/conftest \
-                test --all-namespaces ./tfplan.json --output json > ./result.json          
+                test --all-namespaces ./tfplan.json --output json > ./result.json
         continue-on-error: true
 
       - name: Check for non-low severity issues
@@ -54,8 +54,8 @@ jobs:
         run: |
           # Generate JSON file with all firewall changes with their corresponding risk rating
           jq 'map((.failures[]?.metadata.namespace) = .namespace) | [.[].failures[]?]' ./result.json > ./failures.json
-          result=$(jq '[.[] | select(.metadata.severity != "LOW")]' ./failures.json )
-          if [ -z "$result" ]; then
+          resultLength=$(jq '[.[] | select(.metadata.severity != "LOW")] | length' ./failures.json )
+          if [ "$resultLength" -eq 0 ]; then
             echo "No issues with severity higher than LOW found."
             echo "::set-output name=approve::true"
           else
