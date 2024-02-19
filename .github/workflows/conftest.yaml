@@ -63,24 +63,7 @@ jobs:
             echo "::set-output name=approve::false"
           fi
 
-      - name: Approve PR
-        if: steps.check_results.outputs.approve == 'true'
-        uses: actions/github-script@v5
-        with:
-          script: |
-            const issue_number = context.issue.number;
-            
-            github.rest.issues.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: issue_number,
-              event: 'APPROVE'
-            });
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Comment on PR with issues as a table
-        if: steps.check_results.outputs.approve == 'false'
+      - name: Comment on PRs as a table
         uses: actions/github-script@v7
         with:
           script: |
@@ -95,17 +78,33 @@ jobs:
               const { metadata } = issue;
               const action = metadata?.action ?? 'N/A'; // Use nullish coalescing and optional chaining
               const namespace = metadata?.namespace ?? 'N/A';
-              const name = metadata?.name ?? 'N/A';
+              const ruleName = metadata?.ruleName ?? 'N/A';
               const severityIndicator = metadata?.severity === 'LOW' ? '✅' : '🔴';
               const severity = metadata?.severity ?? 'N/A';
-              return `| ${index + 1} |${action} | ${namespace} | ${name} | ${severity} | ${severityIndicator} |`;
+              return `| ${index + 1} |${action} | ${namespace} | ${ruleName} | ${severity} | ${severityIndicator} |`;
             }).join('\n');
 
-            // Construct detailed messages
-            let detailedMessages = "#### Detailed Messages:\n\n" + issues.map((issue, index) => {
+            # // Construct detailed messages
+            # let detailedMessages = "#### Detailed Messages:\n\n" + issues.map((issue, index) => {
+            #   const { msg, metadata } = issue;
+            #   return `${index + 1}. \n - Error Message: ${msg} \n - Severity: ${metadata?.severity ?? 'N/A'} \n - Project: ${metadata?.project ?? 'N/A'} \n - Network: ${metadata?.network ?? 'N/A'}`;
+            # }).join('\n\n');
+
+            let detailedMessages = "#### Detailed Messages:\n\n" + 
+            "| # | Details |\n" + 
+            "|---|---------|\n" + 
+            issues.map((issue, index) => {
               const { msg, metadata } = issue;
-              return `${index + 1}. \n - Error Message: ${msg} \n - Severity: ${metadata?.severity ?? 'N/A'} \n - Project: ${metadata?.project ?? 'N/A'} \n - Network: ${metadata?.network ?? 'N/A'}`;
-            }).join('\n\n');
+              // Use <br> for line breaks within the same table cell
+              let details = `**Error Message**: ${msg}<br>` +
+                            `**Severity**: ${metadata?.severity ?? 'N/A'}<br>` +
+                            `**Action**: ${metadata?.action ?? 'N/A'}<br>` +
+                            `**Policy Name**: ${metadata?.namespace ?? 'N/A'}<br>` +
+                            `**Rule Name**: ${metadata?.ruleName ?? 'N/A'}<br>` +
+                            `**Project**: ${metadata?.project ?? 'N/A'}<br>` +
+                            `**Network**: ${metadata?.network ?? 'N/A'}`;
+              return `| ${index + 1} | ${details} |`;
+            }).join('\n');
                         
             const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}\n\n${detailedMessages}`;
             
@@ -118,3 +117,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
+      - name: Approve PR
+        if: steps.check_results.outputs.approve == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            
+            github.rest.issues.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: issue_number,
+              event: 'APPROVE'
+            });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
