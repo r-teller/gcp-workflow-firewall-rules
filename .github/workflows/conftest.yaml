@@ -67,10 +67,8 @@ jobs:
         with:
           script: |
             const issue_number = context.issue.number;
-            const github_token = process.env.GITHUB_TOKEN;
-            const octokit = github.getOctokit(github_token);
             
-            octokit.rest.pulls.createReview({
+            github.rest.issues.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: issue_number,
@@ -84,9 +82,11 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
             const issue_number = context.issue.number;
-            const issuesJson = `${{ steps.check_results.outputs.issues }}`;
-            const issues = JSON.parse(`[${issuesJson.replace(/}\s*{/g, '},{')}]`);
+            const issuesJson = fs.readFileSync('result.json', {encoding: 'utf8'});
+            const issues = JSON.parse(issuesJson);
+            
             let tableHeader = '| Message | Network | Project | Rule ID | Severity |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- |\n';
             let tableRows = issues.map(issue => 
