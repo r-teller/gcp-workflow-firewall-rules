@@ -5,6 +5,12 @@ on:
     types: [closed]
     branches:
         - main
+
+# Use a concurrency group to ensure serialized execution
+concurrency: 
+    group: terraform-apply-main
+    cancel-in-progress: false
+
 jobs:
   terraform:
     name: 'Terraform Apply'
