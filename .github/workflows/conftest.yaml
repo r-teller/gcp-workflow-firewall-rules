@@ -47,13 +47,12 @@ jobs:
                 -v "$(pwd)":/project \
                 openpolicyagent/conftest \
                 test --all-namespaces ./tfplan.json --output json > ./result.json
-          jq [.[].failures[]?] > ./failures.json
+          jq [.[].failures[]?] ./result.json > ./failures.json
         continue-on-error: true
 
       - name: Check for non-low severity issues
         id: check_results
         run: |
-
           result=$(jq '[.[] | select(.metadata.severity != "LOW")]' ./failures.json )
           if [ -z "$result" ]; then
             echo "No issues with severity higher than LOW found."
