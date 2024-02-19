@@ -31,7 +31,7 @@ jobs:
       - name: Terraform Plan
         run: |
           terraform plan -out=tfplan
-          terraform show -json ./tfplan > tfplan.json
+          terraform show -json ./tfplan > ./tfplan.json
 
       - name: Pull Docker image
         id: PullDockerImage
