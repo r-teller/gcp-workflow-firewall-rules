@@ -84,14 +84,19 @@ jobs:
           script: |
             const fs = require('fs');
             const issue_number = context.issue.number;
-            const issuesJson = fs.readFileSync('result.json', {encoding: 'utf8'});
+            const issuesJson = fs.readFileSync('./result.json', {encoding: 'utf8'});
             const issues = JSON.parse(issuesJson);
-            
+
             let tableHeader = '| Message | Network | Project | Rule ID | Severity |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- |\n';
-            let tableRows = issues.map(issue => 
-              `| ${issue.msg} | ${issue.metadata.network} | ${issue.metadata.project} | ${issue.metadata.ruleID} | ${issue.metadata.severity} |`
-            ).join('\n');
+            let tableRows = issues.map(issue => {
+              const { msg, metadata } = issue;
+              const network = metadata?.network ?? 'N/A'; // Use nullish coalescing and optional chaining
+              const project = metadata?.project ?? 'N/A';
+              const ruleID = metadata?.ruleID ?? 'N/A';
+              const severity = metadata?.severity ?? 'N/A';
+              return `| ${msg} | ${network} | ${project} | ${ruleID} | ${severity} |`;
+            }).join('\n');
             const commentBody = `### Issues Requiring Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}`;
             
             github.rest.issues.createComment({
