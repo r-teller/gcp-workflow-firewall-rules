@@ -91,7 +91,7 @@ jobs:
             const issues = JSON.parse(issuesJson);
             console.log(issues);
             let tableHeader = '| Message | Network | Project | Rule ID | Severity | Indicator |\n';
-            let tableSeparator = '| --- | --- | --- | --- | --- |\n';
+            let tableSeparator = '| --- | --- | --- | --- | --- | --- |\n';
             let tableRows = issues.map(issue => {
               const { msg, metadata } = issue;
               const network = metadata?.network ?? 'N/A'; // Use nullish coalescing and optional chaining

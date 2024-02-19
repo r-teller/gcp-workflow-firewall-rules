@@ -27,8 +27,10 @@ trusted_cidrs := rfc1918_cidrs | rfc6598_cidrs | google_iap_cidrs | google_gfe_c
 deny[result] {
     resource := input.resource_changes[_]
     resource.type == "google_compute_firewall"
+    
     action := resource.change.actions[_]
     action != "delete"  # Ignore deleted rules
+    action != "no-op"  # Ignore no-op rules
 
     allow_rule := resource.change.after.allow[_]    
     count(allow_rule) > 0

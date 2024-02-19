@@ -4,6 +4,11 @@ package critical_log_config
 deny[result] {
     resource := input.resource_changes[_]
     resource.type == "google_compute_firewall"  # Adjust type as necessary
+    
+    action := resource.change.actions[_]
+    action != "delete"  # Ignore deleted rules
+    action != "no-op"  # Ignore no-op rules
+    
     log_config := resource.change.after.log_config
     not log_config_correctly_set(log_config)
 
