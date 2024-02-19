@@ -124,7 +124,7 @@ jobs:
           script: |
             const issue_number = context.issue.number;
             
-            github.rest.issues.createReview({
+            github.rest.pulls.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: issue_number,
