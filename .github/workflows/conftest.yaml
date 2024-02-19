@@ -107,7 +107,7 @@ jobs:
               return `${index + 1}. \n - Error Message: ${msg} \n - Severity: ${metadata?.severity ?? 'N/A'} \n - Project: ${metadata?.project ?? 'N/A'} \n - Network: ${metadata?.network ?? 'N/A'}`;
             }).join('\n\n');
                         
-            const commentBody = `### Issues Requiring Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}`;
+            const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}\n\n${detailedMessages}`;
             
             github.rest.issues.createComment({
               owner: context.repo.owner,
