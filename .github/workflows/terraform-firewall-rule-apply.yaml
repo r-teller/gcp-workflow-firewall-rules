@@ -2,10 +2,8 @@ name: 'Terraform Apply on Merge'
 
 on:
   pull_request:
-    types:
-      - closed
-    branches:
-      - main
+    types: closed
+    branches: main
 
 # Use a concurrency group to ensure serialized execution
 concurrency: 
