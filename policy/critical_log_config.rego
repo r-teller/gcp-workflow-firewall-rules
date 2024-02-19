@@ -4,12 +4,19 @@ package critical_log_config
 deny[result] {
     resource := input.resource_changes[_]
     resource.type == "google_compute_firewall"  # Adjust type as necessary
+    
+    action := resource.change.actions[_]
+    action != "delete"  # Ignore deleted rules
+    action != "no-op"  # Ignore no-op rules
+
     log_config := resource.change.after.log_config
     not log_config_correctly_set(log_config)
 
     result := {
+        "action": action,
         "severity": "CRITICAL",
         "ruleID": resource.index,
+        "ruleName": resource.change.after.name,
         "project":resource.change.after.project,
         "network":resource.change.after.network,
         "msg": sprintf("Resource '%s' does not have log_config set to INCLUDE_ALL_METADATA or EXCLUDE_ALL_METADATA.", [resource.change.after.name])

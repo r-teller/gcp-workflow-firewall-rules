@@ -1,14 +1,13 @@
 [
     {
-        "id": "allow-tcp-443-ingress-internal-explicit",
-        "name": "allow-tcp-443-ingress-internal-explicit",
+        "id": "allow-tcp-443-ingress-iap-explicit",
+        "name": "allow-tcp-443-ingress-iap-explicit",
         "action": "allow",
         "direction": "INGRESS",
         "log_config": "INCLUDE_ALL_METADATA",
         "priority": 1000,
         "sources": [
-            "192.168.0.0/16",
-            "172.16.0.0/12"
+            "35.235.240.0/20"
         ],
         "targets": [],
         "rules": [

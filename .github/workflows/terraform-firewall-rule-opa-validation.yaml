@@ -1,0 +1,167 @@
+name: Terraform OPA Check and PR Approval
+
+on:
+  pull_request:    
+    types: [synchronize, opened, reopened]
+
+jobs:
+  terraform-opa-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+            terraform_wrapper: false
+            terraform_version: 1.6.6
+
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}' # Replace with the name of your GitHub Actions secret
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -out=tfplan
+          terraform show -json ./tfplan > ./tfplan.json
+          
+      - name: Pull Docker image
+        id: PullDockerImage
+        run: |
+          docker pull "openpolicyagent/conftest:latest"
+
+      - name: Run Conftest
+        run: |
+          docker run \
+                --rm \
+                -v "$(pwd)":/project \
+                openpolicyagent/conftest \
+                test --all-namespaces ./tfplan.json --output json > ./result.json
+        continue-on-error: true
+
+      - name: Check for non-low severity issues
+        id: check_results
+        run: |
+          # Generate JSON file with all firewall changes with their corresponding risk rating
+          jq 'map((.failures[]?.metadata.namespace) = .namespace) | [.[].failures[]?]' ./result.json > ./failures.json
+          resultLength=$(jq '[.[] | select(.metadata.severity != "LOW")] | length' ./failures.json )
+          if [ "$resultLength" -eq 0 ]; then
+            echo "No issues with severity higher than LOW found."
+            echo "::set-output name=approve::true"
+          else
+            echo "Issues with severity higher than LOW found."
+            echo "::set-output name=approve::false"
+          fi
+
+      - name: Comment on PRs as a table
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const issue_number = context.issue.number;
+            const issuesJson = fs.readFileSync('./failures.json', {encoding: 'utf8'});
+            const issues = JSON.parse(issuesJson);
+
+            let tableHeader = '| # | Action | Policy Name | Rule Name | Severity | Indicator |\n';
+            let tableSeparator = '| --- | --- | --- | --- | --- | --- |\n';
+            let tableRows = issues.map((issue, index)=> {
+              const { metadata } = issue;
+              const action = metadata?.action ?? 'N/A'; // Use nullish coalescing and optional chaining
+              const namespace = metadata?.namespace ?? 'N/A';
+              const ruleName = metadata?.ruleName ?? 'N/A';
+              const severityIndicator = metadata?.severity === 'LOW' ? '✅' : '🔴';
+              const severity = metadata?.severity ?? 'N/A';
+              return `| ${index + 1} |${action} | ${namespace} | ${ruleName} | ${severity} | ${severityIndicator} |`;
+            }).join('\n');
+
+            //# // Construct detailed messages
+            //# let detailedMessages = "#### Detailed Messages:\n\n" + issues.map((issue, index) => {
+            //#   const { msg, metadata } = issue;
+            //#   return `${index + 1}. \n - Error Message: ${msg} \n - Severity: ${metadata?.severity ?? 'N/A'} \n - Project: ${metadata?.project ?? 'N/A'} \n - Network: ${metadata?.network ?? 'N/A'}`;
+            //# }).join('\n\n');
+
+            let detailedMessages = "#### Detailed Messages:\n\n" + 
+            "| # | Details |\n" + 
+            "|---|---------|\n" + 
+            issues.map((issue, index) => {
+              const { msg, metadata } = issue;
+              // Use <br> for line breaks within the same table cell
+              let details = `**Message**: ${msg}<br>` +
+                            `**Severity**: ${metadata?.severity ?? 'N/A'}<br>` +
+                            `**Action**: ${metadata?.action ?? 'N/A'}<br>` +
+                            `**Policy Name**: ${metadata?.namespace ?? 'N/A'}<br>` +
+                            `**Rule Name**: ${metadata?.ruleName ?? 'N/A'}<br>` +
+                            `**Project**: ${metadata?.project ?? 'N/A'}<br>` +
+                            `**Network**: ${metadata?.network ?? 'N/A'}`;
+              return `| ${index + 1} | ${details} |`;
+            }).join('\n');
+                        
+            const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}\n\n${detailedMessages}`;
+
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['Manual Review Requi']
+            })
+            
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              body: commentBody
+            });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+      - name: Approve PR
+        if: steps.check_results.outputs.approve == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            
+            github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: issue_number,
+              event: 'APPROVE'
+            });
+
+            // Add a label to indicate the PR was auto-approved
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              labels: ['auto-approved']
+            });            
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Label PR for manual review
+        if: steps.check_results.outputs.approve == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            
+            // Add a label to indicate that manual review is required
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              labels: ['manual-review-required']
+            });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      

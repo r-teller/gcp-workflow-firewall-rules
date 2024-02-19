@@ -1,0 +1,36 @@
+name: 'Terraform Apply on Merge'
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches:
+        - main
+jobs:
+  terraform:
+    name: 'Terraform Apply'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}' # Replace with the name of your GitHub Actions secret
+
+      - name: Terraform Init
+        id: terraform-init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: terraform-validate
+        run: terraform validate -no-color
+
+      - name: Terraform Apply
+        id: terraform-apply
+        run: terraform apply -auto-approve

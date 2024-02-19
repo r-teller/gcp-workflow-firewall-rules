@@ -33,8 +33,10 @@ trusted_cidrs := rfc1918_cidrs | rfc6598_cidrs | google_iap_cidrs | google_gfe_c
 deny[result] {
     resource := input.resource_changes[_]
     resource.type == "google_compute_firewall"
+    
     action := resource.change.actions[_]
     action != "delete"  # Ignore deleted rules
+    action != "no-op"  # Ignore no-op rules
 
     port_info  := disallowed_ports[_]
     allow_rule := resource.change.after.allow[_]    
@@ -48,8 +50,10 @@ deny[result] {
 
     result := {
         "msg": sprintf("Firewall rule '%s' directly allows %s port (%s) from a non-trusted CIDR Range (%s)", [resource.change.after.name, port_info.protocol, port_info.port, source_range]),
+        "action": action,
         "severity": port_info.severity,
         "ruleID": resource.index,
+        "ruleName": resource.change.after.name,
         "project":resource.change.after.project,
         "network":resource.change.after.network,
     }
@@ -59,8 +63,10 @@ deny[result] {
 deny[result] {
     resource := input.resource_changes[_]
     resource.type == "google_compute_firewall"
+    
     action := resource.change.actions[_]
     action != "delete"  # Ignore deleted rules
+    action != "no-op"  # Ignore no-op rules
 
     port_info  := disallowed_ports[_]
     allow_rule := resource.change.after.allow[_]    
@@ -74,8 +80,10 @@ deny[result] {
     
     result := {
         "msg": sprintf("Firewall rule '%s' indirectly allows %s port (%s) within a range from a non-trusted CIDR Range (%s).", [resource.change.after.name, port_info.protocol, port_info.port, source_range]),
+        "action": action,
         "severity": port_info.severity,
         "ruleID": resource.index,
+        "ruleName": resource.change.after.name,
         "project":resource.change.after.project,
         "network":resource.change.after.network,
     }
