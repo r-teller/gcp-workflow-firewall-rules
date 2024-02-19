@@ -7,7 +7,8 @@
         "log_config": "INCLUDE_ALL_METADATA",
         "priority": 1000,
         "sources": [
-            "192.168.0.0/16"
+            "192.168.0.0/16",
+            "172.16.0.0/12"
         ],
         "targets": [],
         "rules": [

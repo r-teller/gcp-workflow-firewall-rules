@@ -96,7 +96,7 @@ jobs:
             issues.map((issue, index) => {
               const { msg, metadata } = issue;
               // Use <br> for line breaks within the same table cell
-              let details = `**Error Message**: ${msg}<br>` +
+              let details = `**Message**: ${msg}<br>` +
                             `**Severity**: ${metadata?.severity ?? 'N/A'}<br>` +
                             `**Action**: ${metadata?.action ?? 'N/A'}<br>` +
                             `**Policy Name**: ${metadata?.namespace ?? 'N/A'}<br>` +
