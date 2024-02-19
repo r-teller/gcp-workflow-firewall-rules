@@ -91,7 +91,7 @@ jobs:
 
             let tableHeader = '| # | Action | Policy Name | Rule Name | Severity | Indicator |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- | --- |\n';
-            let tableRows = issues.map(issue => {
+            let tableRows = issues.map((issue, index)=> {
               const { metadata } = issue;
               const action = metadata?.action ?? 'N/A'; // Use nullish coalescing and optional chaining
               const namespace = metadata?.namespace ?? 'N/A';
