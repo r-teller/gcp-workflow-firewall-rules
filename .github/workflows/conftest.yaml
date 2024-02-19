@@ -32,6 +32,7 @@ jobs:
         run: |
           terraform plan -out=tfplan
           terraform show -json ./tfplan > ./tfplan.json
+          
       - name: View JSON Plan
         run: |
           cat ./tfplan.json | jq
