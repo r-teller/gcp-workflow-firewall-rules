@@ -26,8 +26,10 @@ deny[result] {
 
     result := {
         "msg": sprintf("Firewall rule '%s' directly allows a disallowed %s port (%s), which is not allowed. %s", [resource.change.after.name, port_info.protocol, port_info.port, "cidr_range"]),
+        "action": action,
         "severity": port_info.severity,
         "ruleID": resource.index,
+        "ruleName": resource.change.after.name,
         "project":resource.change.after.project,
         "network":resource.change.after.network,
     }
@@ -37,8 +39,10 @@ deny[result] {
 deny[result] {
     resource := input.resource_changes[_]
     resource.type == "google_compute_firewall"
+    
     action := resource.change.actions[_]
     action != "delete"  # Ignore deleted rules
+    action != "no-op"  # Ignore no-op rules
 
     port_info  := disallowed_ports[_]
     allow_rule := resource.change.after.allow[_]    
@@ -50,6 +54,7 @@ deny[result] {
         "msg": sprintf("Firewall rule '%s' allows a disallowed %s port (%s) within a range, which is not allowed.", [resource.change.after.name, port_info.protocol, port_info.port]),
         "severity": port_info.severity,
         "ruleID": resource.index,
+        "ruleName": resource.change.after.name,
         "project":resource.change.after.project,
         "network":resource.change.after.network,
     }
@@ -59,8 +64,10 @@ deny[result] {
 deny[result] {
     resource := input.resource_changes[_]
     resource.type == "google_compute_firewall"
+    
     action := resource.change.actions[_]
     action != "delete"  # Ignore deleted rules
+    action != "no-op"  # Ignore no-op rules
 
     port_info  := disallowed_ports[_]
     allow_rule := resource.change.after.allow[_]    
@@ -72,6 +79,7 @@ deny[result] {
         "msg": sprintf("Firewall rule '%s' allows all ports for protocol %s, which is not allowed.", [resource.change.after.name, allow_rule.protocol]),
         "severity": port_info.severity,
         "ruleID": resource.index,
+        "ruleName": resource.change.after.name,
         "project":resource.change.after.project,
         "network":resource.change.after.network,
     }

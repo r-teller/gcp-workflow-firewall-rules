@@ -53,8 +53,10 @@ deny[result] {
 
     result := {
         "msg": sprintf("Firewall rule '%s' directly allows a disallowed %s port (%s), which is not allowed. %s", [resource.change.after.name, port_info.protocol, port_info.port, "cidr_range"]),
+        "action": action,
         "severity": port_info.severity,
         "ruleID": resource.index,
+        "ruleName": resource.change.after.name,
         "project":resource.change.after.project,
         "network":resource.change.after.network,
     }
@@ -77,6 +79,7 @@ deny[result] {
         "msg": sprintf("Firewall rule '%s' allows a disallowed %s port (%s) within a range, which is not allowed.", [resource.change.after.name, port_info.protocol, port_info.port]),
         "severity": port_info.severity,
         "ruleID": resource.index,
+        "ruleName": resource.change.after.name,
         "project":resource.change.after.project,
         "network":resource.change.after.network,
     }

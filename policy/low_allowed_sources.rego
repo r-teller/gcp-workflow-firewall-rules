@@ -41,8 +41,10 @@ deny[result] {
 
     result := {
         "msg": sprintf("Firewall rule '%s' allows traffic from a trusted CIDR Range (%s)", [resource.change.after.name, source_range]),
+        "action": action,
         "severity": "LOW",
         "ruleID": resource.index,
+        "ruleName": resource.change.after.name,
         "project":resource.change.after.project,
         "network":resource.change.after.network,
     }

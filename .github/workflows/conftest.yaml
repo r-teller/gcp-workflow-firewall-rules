@@ -52,9 +52,8 @@ jobs:
       - name: Check for non-low severity issues
         id: check_results
         run: |
-          jq [.[].failures[]?] ./result.json > ./failures.json
-          cat ./failures.json | jq
-          cat ./result.json | jq
+          # Generate JSON file with all firewall changes with their corresponding risk rating
+          jq 'map((.failures[]?.metadata.namespace) = .namespace) | [.[].failures[]?]' ./result.json > ./failures.json
           result=$(jq '[.[] | select(.metadata.severity != "LOW")]' ./failures.json )
           if [ -z "$result" ]; then
             echo "No issues with severity higher than LOW found."
@@ -89,18 +88,25 @@ jobs:
             const issue_number = context.issue.number;
             const issuesJson = fs.readFileSync('./failures.json', {encoding: 'utf8'});
             const issues = JSON.parse(issuesJson);
-            console.log(issues);
-            let tableHeader = '| Message | Network | Project | Rule ID | Severity | Indicator |\n';
+
+            let tableHeader = '| # | Action | Policy Name | Rule Name | Severity | Indicator |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- | --- |\n';
             let tableRows = issues.map(issue => {
-              const { msg, metadata } = issue;
-              const network = metadata?.network ?? 'N/A'; // Use nullish coalescing and optional chaining
-              const project = metadata?.project ?? 'N/A';
-              const ruleID = metadata?.ruleID ?? 'N/A';
+              const { metadata } = issue;
+              const action = metadata?.action ?? 'N/A'; // Use nullish coalescing and optional chaining
+              const namespace = metadata?.namespace ?? 'N/A';
+              const name = metadata?.name ?? 'N/A';
               const severityIndicator = metadata?.severity === 'LOW' ? '✅' : '🔴';
               const severity = metadata?.severity ?? 'N/A';
-              return `| ${msg} | ${network} | ${project} | ${ruleID} | ${severity} | ${severityIndicator} |`;
+              return `| ${index + 1} |${action} | ${namespace} | ${name} | ${severity} | ${severityIndicator} |`;
             }).join('\n');
+
+            // Construct detailed messages
+            let detailedMessages = "#### Detailed Messages:\n\n" + issues.map((issue, index) => {
+              const { msg, metadata } = issue;
+              return `${index + 1}. \n - Error Message: ${msg} \n - Severity: ${metadata?.severity ?? 'N/A'} \n - Project: ${metadata?.project ?? 'N/A'} \n - Network: ${metadata?.network ?? 'N/A'}`;
+            }).join('\n\n');
+                        
             const commentBody = `### Issues Requiring Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}`;
             
             github.rest.issues.createComment({

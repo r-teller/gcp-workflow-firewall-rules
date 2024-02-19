@@ -1,0 +1,63 @@
+[
+	{
+		"filename": "./.staging.tfplan.json",
+		"namespace": "high_allowed_sources",
+		"successes": 0,
+		"failures": [
+			{
+				"msg": "Firewall rule 'allow-tcp-443-ingress-external-explicit' allows traffic from a non-trusted CIDR Range (0.0.0.0/0)",
+				"metadata": {
+					"network": "demo-vpc-alpha",
+					"project": "gcp-workflow-firewall-rules",
+					"ruleID": "fw-r-f00c7442-a4d3-57a2-b650-097d6dbe2d97",
+					"severity": "HIGH"
+				}
+			},
+			{
+				"msg": "Firewall rule 'allow-tcp-443-ingress-external-implicit' allows traffic from all sources",
+				"metadata": {
+					"network": "demo-vpc-alpha",
+					"project": "gcp-workflow-firewall-rules",
+					"ruleID": "fw-r-16f5ae99-c241-5dd8-aaae-a2aa8a0f2e75",
+					"severity": "HIGH"
+				}
+			}
+		]
+	},
+	{
+		"filename": "./.staging.tfplan.json",
+		"namespace": "low_allowed_sources",
+		"successes": 1
+	},
+	{
+		"filename": "./.staging.tfplan.json",
+		"namespace": "medium_allowed_ports",
+		"successes": 1,
+		"failures": [
+			{
+				"msg": "Firewall rule 'allow-tcp-443-ingress-external-explicit' directly allows tcp port (443) from a non-trusted CIDR Range (0.0.0.0/0)",
+				"metadata": {
+					"network": "demo-vpc-alpha",
+					"project": "gcp-workflow-firewall-rules",
+					"ruleID": "fw-r-f00c7442-a4d3-57a2-b650-097d6dbe2d97",
+					"severity": "MEDIUM"
+				}
+			}
+		]
+	},
+	{
+		"filename": "./.staging.tfplan.json",
+		"namespace": "critical_allowed_ports",
+		"successes": 3
+	},
+	{
+		"filename": "./.staging.tfplan.json",
+		"namespace": "critical_log_config",
+		"successes": 1
+	},
+	{
+		"filename": "./.staging.tfplan.json",
+		"namespace": "high_allowed_ports",
+		"successes": 2
+	}
+]

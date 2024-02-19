@@ -50,8 +50,10 @@ deny[result] {
 
     result := {
         "msg": sprintf("Firewall rule '%s' directly allows %s port (%s) from a non-trusted CIDR Range (%s)", [resource.change.after.name, port_info.protocol, port_info.port, source_range]),
+        "action": action,
         "severity": port_info.severity,
         "ruleID": resource.index,
+        "ruleName": resource.change.after.name,
         "project":resource.change.after.project,
         "network":resource.change.after.network,
     }
@@ -78,8 +80,10 @@ deny[result] {
     
     result := {
         "msg": sprintf("Firewall rule '%s' indirectly allows %s port (%s) within a range from a non-trusted CIDR Range (%s).", [resource.change.after.name, port_info.protocol, port_info.port, source_range]),
+        "action": action,
         "severity": port_info.severity,
         "ruleID": resource.index,
+        "ruleName": resource.change.after.name,
         "project":resource.change.after.project,
         "network":resource.change.after.network,
     }
