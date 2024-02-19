@@ -31,7 +31,7 @@ jobs:
       - name: Terraform Plan
         run: |
           terraform plan -out=tfplan
-          terraform show -json ./tfplan > tfplan.json
+          terraform show -json ./tfplan > ./tfplan.json
 
       - name: Pull Docker image
         id: PullDockerImage
@@ -40,7 +40,11 @@ jobs:
 
       - name: Run Conftest
         run: |
-          docker run --rm -v $(pwd):/project openpolicyagent/conftest test --all-namespaces ./tfplan.json --output json > ./result.json
+          docker run \
+                --rm \
+                -v "$(pwd)":/project \
+                openpolicyagent/conftest \
+                test --all-namespaces ./tfplan.json --output json > ./result.json
 
       - name: Check for non-low severity issues
         id: check_results
