@@ -14,6 +14,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
+            terraform_wrapper: false
             terraform_version: 1.6.6
 
       - uses: 'google-github-actions/auth@v2'
@@ -31,12 +32,12 @@ jobs:
         id: plan
         run: |
           terraform plan -out=tfplan
-          terraform show -json ./tfplan
+          terraform show -json ./tfplan > ./tfplan.json
           
       - name: View JSON Plan
         id: view
         run: |
-          echo '${{ steps.terraform-json.outputs.stdout }}' > ./tfplan.json
+          cat ./tfplan.json | jq
 
       - name: Pull Docker image
         id: PullDockerImage
