@@ -53,6 +53,8 @@ jobs:
       - name: Check for non-low severity issues
         id: check_results
         run: |
+          cat ./failures.json | jq
+          cat ./result.json | jq
           result=$(jq '[.[] | select(.metadata.severity != "LOW")]' ./failures.json )
           if [ -z "$result" ]; then
             echo "No issues with severity higher than LOW found."
