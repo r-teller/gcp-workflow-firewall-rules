@@ -1,0 +1,65 @@
+name: Terraform OPA Check and PR Approval
+
+on:
+  pull_request:    
+    types: [synchronize, opened, reopened]
+
+jobs:
+  terraform-opa-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.6.6
+
+      - uses: 'google-github-actions/auth@v2'
+        with:
+            credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}' # Replace with the name of your GitHub Actions secret
+
+      - name: Terraform Plan
+        run: |
+          terraform plan -out=tfplan
+          terraform show -json ./tfplan > tfplan.json
+
+      - name: Pull Docker image
+        id: PullDockerImage
+        run: |
+          docker pull "openpolicyagent/conftest:latest"
+
+      - name: Run Conftest
+        run: |
+          docker run --rm -v $(pwd):/project openpolicyagent/conftest test --all-namespaces ./tfplan.json --output json > ./result.json
+
+      - name: Check for non-low severity issues
+        id: check_results
+        run: |
+          result=$(jq '.[] | .failures[]? | select(.metadata.severity != "LOW")' ./result.json)
+          if [ -z "$result" ]; then
+            echo "No issues with severity higher than LOW found."
+            echo "::set-output name=approve::true"
+          else
+            echo "Issues with severity higher than LOW found."
+            echo "::set-output name=approve::false"
+          fi
+
+      - name: Approve PR
+        if: steps.check_results.outputs.approve == 'true'
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            const github_token = process.env.GITHUB_TOKEN;
+            const octokit = github.getOctokit(github_token);
+            
+            octokit.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: issue_number,
+              event: 'APPROVE'
+            });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

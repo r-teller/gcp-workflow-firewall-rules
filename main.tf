@@ -1,59 +1,61 @@
-# locals {
-#   firewall_rule_path = "./rules"
-#   firewall_rule_sets = fileset(local.firewall_rule_path, "**/*.json")
-#   firewall_rules = flatten([for rules in local.firewall_rule_sets : [
-#     for k1, v1 in jsondecode(file("${local.firewall_rule_path}/${rules}")) : {
-#       (k1) = [for k2, v2 in v1[*] : merge(v2, regex("(?P<project>[^/]*)/(?P<network>[^/]*)/(?P<fileName>.*$)", rules))]
-#     } if length(v1) > 0
-#     ]
-#   ])
-#   keys = distinct(flatten([for x in local.firewall_rules : keys(x)]))
+locals {
+  firewall_rule_path = "./rules"
+  firewall_rule_sets = fileset(local.firewall_rule_path, "**/*.json")
+  firewall_rules = flatten([for rules in local.firewall_rule_sets : [
+    for k1, v1 in jsondecode(file("${local.firewall_rule_path}/${rules}")) : merge(
+      v1,
+      regex("(?P<project_id>[^/]*)/(?P<network>[^/]*)/(?P<fileName>.*$)", rules)
+    ) if length(v1) > 0
+    ]
+  ])
+}
 
-#   firewall_rules_merged = {
-#     for key in local.keys : key => merge(flatten(
-#       [for x in local.firewall_rules : x[key] if can(x[key])]
-#     )...)
+module "firewall_rules" {
+  count = 1
+  # source = "../.."
+  source  = "r-teller/firewall-rules/google"
+  version = ">=3.0.0"
+
+  ## Optional field and can be explicitly specified here or within the firewall_rule
+  #   project_id = var.project_id
+  #   network    = var.network
+
+  firewall_rules = local.firewall_rules
+
+  # Optional field used to include implicit sources within Firewall rules
+  include_implicit_addresses = false
+
+  ## Optional field for using legacy dynamic naming
+  # use_legacy_naming = true
+
+  ## Optional field that can be used to limit attributes used in dynamic naming
+  # override_dynamic_naming = {
+  #   include_prefix      = true
+  #   include_environment = true
+  #   include_project_id  = true
+  #   include_network     = true
+  #   include_name        = true
+  #   include_id          = true
+  # }
+}
+
+# ### Creates JSON file that contains a list of all configured rules
+# resource "local_file" "rules_json" {
+#   content  = jsonencode(module.firewall_rules.firewall_rules_raw)
+#   filename = "${path.module}/outputs/managed.json"
+# }
+
+
+# resource "google_compute_firewall" "foo" {
+#   name    = "foobar"
+#   project = "gcp-workflow-firewall-rules"
+#   network = "demo-vpc-alpha"
+
+#   source_ranges = ["0.0.0.0/0"]
+#   #   target_ranges = n
+
+#   allow {
+#     protocol = "tcp"
+#     ports    = [3389]
 #   }
-# }
-
-
-# output "foo" {
-#   #   value = [
-#   #     for a in fileset(local.firewall_rule_path, "**/*.json") :
-#   #     regex("(?P<project>[^/]*)/(?P<network>[^/]*)/(?P<fileName>.*$)", a)
-#   #   ]
-#   value = local.firewall_rules_merged
-# }
-
-
-# module "firewall_rules" {
-#   source       = "terraform-google-modules/network/google//modules/firewall-rules"
-#   version      = "9.0.0"
-
-#   project_id   = var.project_id          #<-- Tier one folder
-#   network_name = module.vpc.network_name #<-- Tier two folder
-
-#   ingress_rules = [{
-#     name                    = "allow-ssh-ingress"
-#     description             = null
-#     priority                = null
-#     destination_ranges      = ["10.0.0.0/8"]
-#     source_ranges           = ["0.0.0.0/0"]
-#     source_tags             = null
-#     source_service_accounts = null
-#     target_tags             = null
-#     target_service_accounts = null
-#     allow = [{
-#       protocol = "tcp"
-#       ports    = ["22"]
-#     }]
-#     deny = []
-#     log_config = {
-#       metadata = "INCLUDE_ALL_METADATA"
-#     }
-#   }]
-
-#   egress_rules = [
-
-#   ]
 # }

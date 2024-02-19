@@ -1,0 +1,20 @@
+[
+    {
+        "id": "allow-tcp-all-ingress-internal-explicit",
+        "name": "allow-tcp-all-ingress-internal-explicit",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [
+            "192.168.0.0/16"
+        ],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": []
+            }
+        ]
+    }
+]

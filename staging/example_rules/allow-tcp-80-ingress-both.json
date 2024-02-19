@@ -1,0 +1,60 @@
+[
+    {
+        "id": "allow-tcp-80-ingress-external-implicit",
+        "name": "allow-tcp-80-ingress-external-implicit",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "80"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "allow-tcp-80-ingress-external-explicit",
+        "name": "allow-tcp-80-ingress-external-explicit",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [
+            "0.0.0.0/0"
+        ],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "80"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "allow-tcp-80-ingress-internal-explicit",
+        "name": "allow-tcp-80-ingress-internal-explicit",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [
+            "192.168.0.0/16"
+        ],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "80"
+                ]
+            }
+        ]
+    }
+]
