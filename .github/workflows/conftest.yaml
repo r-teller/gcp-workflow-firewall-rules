@@ -83,3 +83,30 @@ jobs:
             });
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR with issues as a table
+        if: steps.check_results.outputs.approve == 'false'
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            const issuesJson = `${{ steps.check_results.outputs.issues }}`;
+            const issues = JSON.parse(`[${issuesJson.replace(/}\s*{/g, '},{')}]`);
+            let tableHeader = '| Message | Network | Project | Rule ID | Severity |\n';
+            let tableSeparator = '| --- | --- | --- | --- | --- |\n';
+            let tableRows = issues.map(issue => 
+              `| ${issue.msg} | ${issue.metadata.network} | ${issue.metadata.project} | ${issue.metadata.ruleID} | ${issue.metadata.severity} |`
+            ).join('\n');
+            const commentBody = `### Issues Requiring Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}`;
+            const github_token = process.env.GITHUB_TOKEN;
+            const octokit = github.getOctokit(github_token);
+            
+            octokit.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              body: commentBody
+            });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
