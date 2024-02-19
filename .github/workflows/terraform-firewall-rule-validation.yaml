@@ -157,7 +157,8 @@ jobs:
               issue_number: issue_number,
               labels: ['auto-approved']
             });
-
+            
+            /*
             // Merge the PR
             const mergeResponse = await github.rest.pulls.merge({
               owner: context.repo.owner,
@@ -183,6 +184,7 @@ jobs:
                             
               console.log('PR successfully merged');
             }
+            */
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

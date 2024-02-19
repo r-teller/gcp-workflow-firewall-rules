@@ -1,7 +1,8 @@
 name: 'Terraform Apply on Merge'
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
 
@@ -12,7 +13,7 @@ concurrency:
 
 jobs:
   terraform-apply:
-    #if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    if: github.event.pull_request.merged == true
     name: 'Terraform Apply'
     runs-on: ubuntu-latest
 
