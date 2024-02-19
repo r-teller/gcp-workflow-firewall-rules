@@ -5,7 +5,7 @@
         "action": "allow",
         "direction": "INGRESS",
         "log_config": "INCLUDE_ALL_METADATA",
-        "priority": 1000,
+        "priority": 1001,
         "sources": [],
         "targets": [],
         "rules": [
