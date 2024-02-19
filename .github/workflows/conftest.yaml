@@ -20,6 +20,14 @@ jobs:
         with:
             credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}' # Replace with the name of your GitHub Actions secret
 
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        
       - name: Terraform Plan
         run: |
           terraform plan -out=tfplan
