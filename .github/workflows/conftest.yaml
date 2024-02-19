@@ -49,15 +49,10 @@ jobs:
                 test --all-namespaces ./tfplan.json --output json > ./result.json
         continue-on-error: true
 
-      - name: View Conftest Result
-        id: view_results
-        run: |
-          cat ./result.json | jq
-
       - name: Check for non-low severity issues
         id: check_results
         run: |
-          result=$(jq '.[] | .failures[]? | select(.metadata.severity != "LOW")' ./result.json)
+          result=$(jq '[.[] | .failures[]? | select(.metadata.severity != "LOW")]' ./result.json)
           if [ -z "$result" ]; then
             echo "No issues with severity higher than LOW found."
             echo "::set-output name=approve::true"
