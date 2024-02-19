@@ -20,6 +20,7 @@ jobs:
       - uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}' # Replace with the name of your GitHub Actions secret
+
       - name: Terraform Init
         id: init
         run: terraform init
@@ -34,11 +35,6 @@ jobs:
           terraform plan -out=tfplan
           terraform show -json ./tfplan > ./tfplan.json
           
-      - name: View JSON Plan
-        id: view
-        run: |
-          cat ./tfplan.json | jq
-
       - name: Pull Docker image
         id: PullDockerImage
         run: |
@@ -51,6 +47,7 @@ jobs:
                 -v "$(pwd)":/project \
                 openpolicyagent/conftest \
                 test --all-namespaces ./tfplan.json --output json > ./result.json
+        continue-on-error: true
 
       - name: Check for non-low severity issues
         id: check_results
