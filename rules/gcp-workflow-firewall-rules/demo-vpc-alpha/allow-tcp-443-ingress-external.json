@@ -25,7 +25,8 @@
         "log_config": "INCLUDE_ALL_METADATA",
         "priority": 1000,
         "sources": [
-            "0.0.0.0/0"
+            "0.0.0.0/0",
+            "1.1.1.1/32"
         ],
         "targets": [],
         "rules": [
