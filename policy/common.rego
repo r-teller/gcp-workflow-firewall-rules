@@ -50,7 +50,7 @@ google_gfe_cidrs := {
 trusted_cidrs := ((rfc1918_cidrs | rfc6598_cidrs) | google_iap_cidrs) | google_gfe_cidrs
 
 # List of disallowed ports with associated severities
-disallowed_ports := [{"protocol": "tcp", "port": "443"}]
+disallowed_ports := [{"protocol": "tcp", "port": "80"}]
 
 # is_trusted_source evaluates whether the given input_value represents a trusted source.
 # It considers a source trusted based on one of the following criteria:
@@ -121,10 +121,9 @@ any_trusted_cidr_contains(cidr) {
 }
 
 is_denied_ports(input_value) {
-	is_in_specified_ports(input_value.allow[_].ports, disallowed_ports[_])
+	is_in_specified_ports(input_value.allow[_].ports, disallowed_ports[_].port)
 } else {
-	split(input_value.allow[_].ports, "-") > 0 
-	is_in_port_range(input_value.allow[_].ports, disallowed_ports[_])
+	is_in_port_range(input_value.allow[_].ports, disallowed_ports[_].port)
 }
 
 # Checks if the port is specified directly
