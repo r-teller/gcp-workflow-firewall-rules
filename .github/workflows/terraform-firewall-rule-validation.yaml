@@ -136,6 +136,8 @@ jobs:
             const issuesJson = fs.readFileSync('./result.failures_grouped.json', {encoding: 'utf8'});
             const issues = JSON.parse(issuesJson);
 
+            console.log('Parsed issues:', issues); // Add this line to print the parsed issues
+
             let tableHeader = '| # | Action |  Rule Name | Rule Action | Rule Rating | Severity Indicator |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- | --- |\n';
             let tableRows = issues.map((issue, index)=> {
