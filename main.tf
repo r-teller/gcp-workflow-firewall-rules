@@ -4,14 +4,18 @@ locals {
   firewall_rules = flatten([for rules in local.firewall_rule_sets : [
     for k1, v1 in jsondecode(file("${local.firewall_rule_path}/${rules}")) : merge(
       v1,
-      regex("(?P<project_id>[^/]*)/(?P<network>[^/]*)/(?P<fileName>.*$)", rules)
+      regex("(?P<project_id>[^/]*)/(?P<network>[^/]*)/(?P<file_name>.*$)", rules)
     ) if length(v1) > 0
     ]
   ])
 }
 
+variable "generate_firewall_rules_map_json" {
+  type    = bool
+  default = false
+}
+
 module "firewall_rules" {
-  count = 1
   # source = "../.."
   source  = "r-teller/firewall-rules/google"
   version = ">=3.0.0"
@@ -39,11 +43,12 @@ module "firewall_rules" {
   # }
 }
 
-# ### Creates JSON file that contains a list of all configured rules
-# resource "local_file" "rules_json" {
-#   content  = jsonencode(module.firewall_rules.firewall_rules_raw)
-#   filename = "${path.module}/outputs/managed.json"
-# }
+### Creates JSON file that contains a list of all configured rules
+resource "local_file" "firewall_rules_map" {
+  count    = var.generate_firewall_rules_map_json ? 1 : 0
+  content  = jsonencode(module.firewall_rules.firewall_rules_map)
+  filename = "${path.module}/outputs/managed.json"
+}
 
 
 # resource "google_compute_firewall" "foo" {

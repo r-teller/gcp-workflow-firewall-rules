@@ -5,10 +5,12 @@ on:
     types: [closed]
     branches:
       - main
+    paths:
+      - rules/**
 
 # Use a concurrency group to ensure serialized execution
 concurrency: 
-    group: terraform-apply-main
+    group: terraform-plan-or-apply
     cancel-in-progress: false
 
 jobs:

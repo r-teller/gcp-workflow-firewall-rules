@@ -21,10 +21,29 @@ warn_catch_all[result] {
 
 	action := resource.change.actions[_]
 	action != "no-op"
+	action == "delete"
+
 
 	result := common.template_result(
 		"LOW",
 		resource,
-		sprintf("Firewall Rule '%s' will be %s, and this change is considered low risk other policies may override this risk rating.", [resource.change.after.name, common.action_description(action)]),
+		sprintf("Firewall Rule '%s' will be %s, and this change is considered low risk other policies may override this risk rating.", [common.select_resource_change(resource.change).name, common.action_description(action)]),
 	)
+}
+
+
+warn_catch_all_delete[result] {
+	resource := input.resource_changes[_]
+	resource.type == "google_compute_firewall"
+
+	action := resource.change.actions[_]
+	action != "no-op"
+	action != "delete"
+
+
+	result := {
+		"msg" : "foo",
+		"ruleKey": resource.index,
+		"ruleName": resource.change.before.name,
+	}
 }

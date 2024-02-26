@@ -4,6 +4,11 @@ on:
   pull_request:    
     types: [synchronize, opened, reopened]
 
+# Use a concurrency group to ensure serialized execution
+concurrency: 
+  group: terraform-plan-or-apply
+  cancel-in-progress: false
+
 jobs:
   terraform-opa-check:
     runs-on: ubuntu-latest
@@ -32,7 +37,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          terraform plan -out=tfplan
+          terraform plan -out=tfplan -var generate_firewall_rules_map_json=true
           terraform show -json ./tfplan > ./tfplan.json
           
       - name: Pull Docker image
@@ -57,7 +62,7 @@ jobs:
             . as $root | 
             ($root.warnings // [] + $root.failures // [])[] | 
             {
-              ruleID: .metadata.ruleID, 
+              ruleKey: .metadata.ruleKey, 
               ruleRating: .metadata.ruleRating, 
               msg: .msg, 
               action: .metadata.action,
@@ -72,24 +77,40 @@ jobs:
             }
           ]' ./result.json > ./result.failures_list.json
 
+          # Extracts the content of the 'firewall_rules_map' resource from the Terraform plan JSON output.
+          # This command filters the 'resource_changes' array to find an object where the 'name' matches 'firewall_rules_map'.
+          # It then extracts the 'content' field from the 'after' state of the change, parses it as JSON,
+          # and writes the result to '.staging.firewall_rules_map.json'.
+          jq -r '
+            .resource_changes[] |
+            select(.name == "firewall_rules_map") |
+            .change.after.content |
+            fromjson
+          ' ./tfplan.json > ./result.firewall_rules_map.json
+
           # Second Command: This command takes the output of the first command and then 
-          # - groups the data by ruleID
+          # - groups the data by ruleKey
           # - calculates the totalRuleRating 
           # - inserts violation_overview for each rule
           # - sorts the rules by totalRuleRating from high to low.
-          jq 'group_by(.ruleID) | 
+          jq --slurpfile rulesMap result.firewall_rules_map.json '
+          group_by(.ruleKey) | 
           map({
-            (.[0].ruleID): {
+            (.[0].ruleKey): {
               totalRuleRating: map(.ruleRating) | add, 
               totalCount: length, 
-              ruleAction: .[0].ruleAction, 
+              ruleAction: .[0].ruleAction,
+              fileName: ($rulesMap[0][.[0].ruleKey].file_name),
+              ruleId: ($rulesMap[0][.[0].ruleKey].id),
+              environemnt: ($rulesMap[0][.[0].ruleKey].environemnt),
+              prefix: ($rulesMap[0][.[0].ruleKey].prefix),
               action: .[0].action, 
               network: .[0].network, 
               project: .[0].project, 
               ruleName: .[0].ruleName, 
               direction: .[0].direction, 
               rulePriority: .[0].rulePriority, 
-              violation_overview: (map({
+              violationOverview: (map({
                 message: .msg, 
                 namespace: .namespace, 
                 severity: .severity, 
@@ -97,7 +118,7 @@ jobs:
               }) | sort_by(.ruleRating) | reverse)
             }
           }) | 
-          add | to_entries | sort_by(.value.totalRuleRating) | reverse | 
+          add | to_entries | sort_by(.value.totalRuleRating) | reverse |         
           from_entries' ./result.failures_list.json > ./result.failures_grouped.json
 
           nonLowFailureCount=$(jq '[.[] | select(.totalRuleRating != 1)] | length' ./result.failures_grouped.json)
@@ -157,7 +178,11 @@ jobs:
               const totalRuleRating = issue.totalRuleRating;
               const project = issue?.project ?? 'N/A';
               const network = issue?.network ?? 'N/A';
-              const violation_overview = issue?.violation_overview ?? [];
+              const fileName = issue?.fileName ?? 'N/A';
+              const environment = issue?.environment ?? 'N/A';
+              const prefix = issue?.prefix ?? 'N/A';
+              const ruleId = issue?.ruleId ?? 'N/A';
+              const violationOverview = issue?.violationOverview ?? [];
 
               let severityIndicator = '🔴'; // Default to red circle
             
@@ -173,14 +198,19 @@ jobs:
                             `**Rule Action**: ${ruleAction}<br>` +
                             `**Rule Direction**: ${ruleDirection}<br>` +
                             `**Rule Priority**: ${ruleName}<br>` +
+                            `**Rule ID**: ${ruleName}<br>` +
                             `**Project**: ${project}<br>` +
                             `**Network**: ${network}<br>` +
+                            `**File Name**: ${fileName}<br>` +
+                            `**Environment**: ${environment}<br>` +
+                            `**Prefix**: ${prefix}<br>` +
                             `**Violation Overview**:<br>` +
-                            violation_overview.map(violation => {
-                              return `&bull; **Message**: ${violation.message ?? 'N/A'}<br>` +
-                                     `&bull; **Namespace**: ${violation.namespace ?? 'N/A'}<br>` +
-                                     `&bull; **Severity**: ${violation.severity ?? 'N/A'}<br>` +
-                                     `&bull; **Rule Rating**: ${violation.ruleRating ?? 'N/A'}`;
+                            violationOverview.map(violation => {
+                              return `<hr>` + // Add this line to insert a horizontal rule before each violation
+                                    `&bull; **Message**: ${violation.message ?? 'N/A'}<br>` +
+                                    `&bull; **Namespace**: ${violation.namespace ?? 'N/A'}<br>` +
+                                    `&bull; **Severity**: ${violation.severity ?? 'N/A'}<br>` +
+                                    `&bull; **Rule Rating**: ${violation.ruleRating ?? 'N/A'}`;
                             }).join('<br>');
             
               detailedMessages += `| ${index + 1} | ${details} |\n`;
@@ -188,7 +218,17 @@ jobs:
               index++;
             }                
 
-            const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows.join('\n')}\n\n${detailedMessages}`;
+            // const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows.join('\n')}\n\n${detailedMessages}`;
+
+            const highestTotalRuleRating = Math.max(...Object.values(issues).map(issue => issue.totalRuleRating));
+            let commentIcon = '🔴'; // Default to red circle
+            if (highestTotalRuleRating === 1) {
+              commentIcon = '✅'; // Green check for totalRuleRating == 1
+            } else if (highestTotalRuleRating > 1 && highestTotalRuleRating < 999) {
+              commentIcon = '⚠️'; // Yellow caution sign for totalRuleRating > 1 & < 999
+            }
+
+            const commentBody = `### ${commentIcon} -- Pull Request Risk Matrix\n\n${tableHeader}${tableSeparator}${tableRows.join('\n')}\n\n${detailedMessages}`;
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
