@@ -28,30 +28,55 @@ package common
 template_result(severity, resource, message) := {
 	"action": resource.change.actions[_],
 	"severity": severity, # CRITICAL | HIGH | MEDIUM | LOW,
-	"ruleRating": riskRating(severity),
+	"ruleRating": risk_rating(severity),
 	"ruleKey": resource.index,
 	"ruleName": resource.change.after.name,
 	"ruleAction": rule_action(resource.change.after.allow[_]),
 	"ruleDirection": resource.change.after.direction,
 	"rulePriority": resource.change.after.priority,
 	"project": resource.change.after.project,
-	"network": resource.change.after.network,
+	"network": extract_last_path_component(resource.change.after.network),
 	"msg": message,
 	"message": message,
 }
 
-riskRating(severity) = rating {
-	severity == "LOW"
-	rating = 1
+# extract_last_path_component extracts the last path component from a given string.
+# This is useful for parsing URLs or any string that uses '/' to separate components,
+# and it's specifically tailored for extracting names from GCP resource URLs.
+extract_last_path_component(input_string) = last_component {
+    path_components := split(input_string, "/")
+    last_index := count(path_components) - 1
+    last_component := path_components[last_index]
+}
+
+# risk_rating calculates a numerical rating based on the severity level of a finding.
+# This function maps textual severity levels to numerical ratings to facilitate
+# easier comparison and handling of severity levels in policies. The function
+# supports four severity levels: LOW, MEDIUM, HIGH, and CRITICAL, which are
+# mapped to numerical ratings from 1 to 4, respectively. If the severity level
+# does not match any of the known levels, a default rating of 999 is returned,
+# indicating an undefined or unknown severity level.
+#
+# Parameters:
+# - severity: A string representing the severity level of a finding. Expected
+#   values are "LOW", "MEDIUM", "HIGH", or "CRITICAL".
+#
+# Returns:
+# - rating: An integer representing the numerical rating of the severity level.
+#   The ratings are as follows: LOW = 1, MEDIUM = 2, HIGH = 3, CRITICAL = 4.
+#   If the severity level is unknown, the function returns 999.
+risk_rating(severity) = rating {
+    severity == "LOW"
+    rating = 1
 } else = rating {
-	severity == "MEDIUM"
-	rating = 2
+    severity == "MEDIUM"
+    rating = 2
 } else = rating {
-	severity == "HIGH"
-	rating = 3
+    severity == "HIGH"
+    rating = 3
 } else = rating {
-	severity == "CRITICAL"
-	rating = 4
+    severity == "CRITICAL"
+    rating = 4
 } else = 999
 
 # action_description translates an action keyword into a past-tense description.
@@ -96,10 +121,10 @@ action_description(action) = result {
 # Returns:
 # - action: A string that is either "ALLOW" if rule actions are present, or "DENY" if no rule actions
 #           are present. This outcome directly influences the enforcement decision for the policy rule.
-rule_action(ruleAction) = action {
-	count(ruleAction) > 0
+rule_action(rule_action) = action {
+	count(rule_action) > 0
 	action = "ALLOW"
 } else = action {
-	count(ruleAction) == 0
+	count(rule_action) == 0
 	action = "DENY"
 }
