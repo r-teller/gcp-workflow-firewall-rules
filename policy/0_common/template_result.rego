@@ -40,6 +40,18 @@ template_result(severity, resource, message) := {
 	"message": message,
 }
 
+# select_resource_change determines the relevant state of a resource based on its change action.
+# This function is crucial for policies that need to evaluate the state of a resource before or after a change.
+# It helps in identifying what the resource's configuration was (or would be) at the time of policy evaluation.
+#
+# Parameters:
+# - resource_changes: An object that contains details about the changes being made to the resource,
+#   including the actions (create, update, delete) and the state of the resource before and after the change.
+#
+# Returns:
+# - result_change: An object representing the state of the resource relevant to the policy evaluation.
+#   If the action is "delete", it returns the 'before' state, as the resource is going to be removed.
+#   For all other actions, it returns the 'after' state, representing the new or modified state of the resource.
 select_resource_change(resource_changes) = result_change {
 	resource_changes.actions[_] == "delete"
 	result_change = resource_changes.before
