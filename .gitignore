@@ -1,4 +1,5 @@
-*.archive.*
+*.archive/*
+*.staging/*
 *.staging.*
 
 # Local .terraform directories
