@@ -206,10 +206,11 @@ jobs:
                             `**Prefix**: ${prefix}<br>` +
                             `**Violation Overview**:<br>` +
                             violationOverview.map(violation => {
-                              return `&bull; **Message**: ${violation.message ?? 'N/A'}<br>` +
-                                     `&bull; **Namespace**: ${violation.namespace ?? 'N/A'}<br>` +
-                                     `&bull; **Severity**: ${violation.severity ?? 'N/A'}<br>` +
-                                     `&bull; **Rule Rating**: ${violation.ruleRating ?? 'N/A'}`;
+                              return `<hr>` + // Add this line to insert a horizontal rule before each violation
+                                    `&bull; **Message**: ${violation.message ?? 'N/A'}<br>` +
+                                    `&bull; **Namespace**: ${violation.namespace ?? 'N/A'}<br>` +
+                                    `&bull; **Severity**: ${violation.severity ?? 'N/A'}<br>` +
+                                    `&bull; **Rule Rating**: ${violation.ruleRating ?? 'N/A'}`;
                             }).join('<br>');
             
               detailedMessages += `| ${index + 1} | ${details} |\n`;

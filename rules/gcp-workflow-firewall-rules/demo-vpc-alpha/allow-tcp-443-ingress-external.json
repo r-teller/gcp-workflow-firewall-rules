@@ -7,7 +7,7 @@
         "log_config": "INCLUDE_ALL_METADATA",
         "priority": 1000,
         "sources": [],
-        "targets": [],
+        "targets": ["foo-web-server"],
         "rules": [
             {
                 "protocol": "TCP",
