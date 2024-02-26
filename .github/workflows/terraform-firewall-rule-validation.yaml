@@ -60,6 +60,7 @@ jobs:
               ruleID: .metadata.ruleID, 
               ruleRating: .metadata.ruleRating, 
               msg: .msg, 
+              action: .metadata.action,
               namespace: $root.namespace, 
               severity: .metadata.severity, 
               ruleAction: .metadata.ruleAction, 
@@ -82,6 +83,7 @@ jobs:
               totalRuleRating: map(.ruleRating) | add, 
               totalCount: length, 
               ruleAction: .[0].ruleAction, 
+              action: .[0].action, 
               network: .[0].network, 
               project: .[0].project, 
               ruleName: .[0].ruleName, 
@@ -98,7 +100,7 @@ jobs:
           add | to_entries | sort_by(.value.totalRuleRating) | reverse | 
           from_entries' ./result.failures_list.json > ./result.failures_grouped.json
 
-          nonLowFailureCount=$(jq '[.[] | select(.totalRuleRating == 1)] | length' ./result.failures_grouped.json)
+          nonLowFailureCount=$(jq '[.[] | select(.totalRuleRating != 1)] | length' ./result.failures_grouped.json)
           if [ "$nonLowFailureCount" -eq 0 ]; then
             echo "No issues with severity higher than LOW found."
             echo "::set-output name=approve::true"
@@ -131,17 +133,32 @@ jobs:
           script: |
             const fs = require('fs');
             const issue_number = context.issue.number;
-            const issuesJson = fs.readFileSync('./failures.json', {encoding: 'utf8'});
+            const issuesJson = fs.readFileSync('./result.failures_grouped.json', {encoding: 'utf8'});
             const issues = JSON.parse(issuesJson);
 
-            let tableHeader = '| # | Action | Policy Name | Rule Name | Indicator |\n';
-            let tableSeparator = '| --- | --- | --- | --- | --- |\n';
-            let tableRows = issues.map((issue, index)=> {
-              const { metadata } = issue;
-              const action = metadata?.action ?? 'N/A'; // Use nullish coalescing and optional chaining
-              const namespace = metadata?.namespace ?? 'N/A';
-              const ruleName = metadata?.ruleName ?? 'N/A';
+            console.log('Parsed issues:', issues); // Add this line to print the parsed issues
+            
+            let detailedMessages = "#### Detailed Messages:\n\n" + 
+            "| # | Details |\n" + 
+            "|---|---------|\n";
+
+            let tableHeader = '| # | Action |  Rule Name | Rule Action | Rule Rating | Violation Count | Severity Indicator |\n';
+            let tableSeparator = '| --- | --- | --- | --- | --- | --- | --- |\n';
+            let tableRows = [];
+            let index = 0;
+            for (const key in issues) {
+              const issue = issues[key];              
+              const action = issue?.action ?? 'N/A';
+              const ruleName = issue?.ruleName ?? 'N/A';
+              const ruleAction = issue?.ruleAction ?? 'N/A'; 
+              const ruleDirection = issue?.direction ?? 'N/A'; 
+              const rulePriority = issue?.rulePriority ?? 'N/A';
+              const voilationCount  = issue?.totalCount ?? 'N/A';
               const totalRuleRating = issue.totalRuleRating;
+              const project = issue?.project ?? 'N/A';
+              const network = issue?.network ?? 'N/A';
+              const violation_overview = issue?.violation_overview ?? [];
+
               let severityIndicator = '🔴'; // Default to red circle
             
               if (totalRuleRating === 1) {
@@ -149,43 +166,30 @@ jobs:
               } else if (totalRuleRating > 1 && totalRuleRating < 999) {
                 severityIndicator = '⚠️'; // Yellow caution sign for totalRuleRating > 1 & < 999
               }
-            
-              return `| ${index + 1} |${action} | ${namespace} | ${ruleName} | ${severityIndicator} |`;
-            }).join('\n');
-            
+              tableRows.push(`| ${index + 1} |${action} |  ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${voilationCount} | ${severityIndicator} |`);
 
-            //# // Construct detailed messages
-            //# let detailedMessages = "#### Detailed Messages:\n\n" + issues.map((issue, index) => {
-            //#   const { msg, metadata } = issue;
-            //#   return `${index + 1}. \n - Error Message: ${msg} \n - Severity: ${metadata?.severity ?? 'N/A'} \n - Project: ${metadata?.project ?? 'N/A'} \n - Network: ${metadata?.network ?? 'N/A'}`;
-            //# }).join('\n\n');
-
-            let detailedMessages = "#### Detailed Messages:\n\n" + 
-            "| # | Details |\n" + 
-            "|---|---------|\n" + 
-            issues.map((issue, index) => {
-              const { msg, metadata, violation_overview } = issue;
-              // Use <br> for line breaks within the same table cell
-              let details = `**Message**: ${msg}<br>` +
-                            `**Severity**: ${metadata?.severity ?? 'N/A'}<br>` +
-                            `**Action**: ${metadata?.action ?? 'N/A'}<br>` +
-                            `**Policy Name**: ${metadata?.namespace ?? 'N/A'}<br>` +
-                            `**Rule Name**: ${metadata?.ruleName ?? 'N/A'}<br>` +
-                            `**Project**: ${metadata?.project ?? 'N/A'}<br>` +
-                            `**Network**: ${metadata?.network ?? 'N/A}'<br>` +
+              let details = `**Action**: ${action}<br>` +
+                            `**Rule Name**: ${ruleName}<br>` +
+                            `**Rule Action**: ${ruleAction}<br>` +
+                            `**Rule Direction**: ${ruleDirection}<br>` +
+                            `**Rule Priority**: ${ruleName}<br>` +
+                            `**Project**: ${project}<br>` +
+                            `**Network**: ${network}<br>` +
                             `**Violation Overview**:<br>` +
-                            violation_overview.map((violation, i) => {
-                              return `--- **message**: ${violation.message ?? 'N/A'}<br>` +
-                                     `--- **namespace**: ${violation.namespace ?? 'N/A'}<br>` +
-                                     `--- **severity**: ${violation.severity ?? 'N/A'}<br>` +
-                                     `--- **ruleRating**: ${violation.ruleRating ?? 'N/A'}`;
-                            }).join('<br>'); // Include all violations in the violation_overview array
-              return `| ${index + 1} | ${details} |`;
-            }).join('\n');
+                            violation_overview.map(violation => {
+                              return `&bull; **Message**: ${violation.message ?? 'N/A'}<br>` +
+                                     `&bull; **Namespace**: ${violation.namespace ?? 'N/A'}<br>` +
+                                     `&bull; **Severity**: ${violation.severity ?? 'N/A'}<br>` +
+                                     `&bull; **Rule Rating**: ${violation.ruleRating ?? 'N/A'}`;
+                            }).join('<br>');
             
-                        
-            const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}\n\n${detailedMessages}`;
-            
+              detailedMessages += `| ${index + 1} | ${details} |\n`;
+              
+              index++;
+            }                
+
+            const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows.join('\n')}\n\n${detailedMessages}`;
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
