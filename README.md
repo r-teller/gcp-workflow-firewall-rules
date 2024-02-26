@@ -89,7 +89,8 @@ Organize firewall rule files within the repository based on their corresponding 
 ### Mapping to GCP
 Ensure folder and file names accurately reflect their GCP counterparts for correct rule application.
 
-## Example: Running Terraform Plan and Policy Evaluation
+## Examples:
+### Example: Running Terraform Plan and Policy Evaluation
 
 The following example shows how to execute a Terraform plan, output the plan to a JSON file, and then use Docker to run `conftest` for evaluating the plan against your OPA policies.
 
@@ -112,6 +113,19 @@ docker run --rm -v "$(pwd)":/project openpolicyagent/conftest test --all-namespa
 ```
 
 This process will generate a `result.json` file containing the results of the policy evaluation, which can be used to identify potential compliance issues with the proposed changes.
+
+### Example: Github Action Workflows
+#### Low Risk Change - Update
+![alt text](images/example_low_risk_update.png)
+
+#### Low Risk Change - Delete
+![alt text](images/example_low_risk_delete.png)
+
+#### Medium to Critical Risk Change - Update 
+![alt text](images/example_critical_update.png)
+
+#### Blocking Risk Change - Update
+![alt text](images/example_mixed_risk_update.png)
 
 ## Contributions and Support
 - **Contributing:** Ensure your firewall rule changes meet the compliance and risk assessment criteria for smooth approval. Follow the submission process detailed above. Refer to the [Policy Guide](policy.md) for more information on compliance requirements.
