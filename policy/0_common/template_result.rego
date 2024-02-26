@@ -29,7 +29,7 @@ template_result(severity, resource, message) := {
 	"action": resource.change.actions[_],
 	"severity": severity, # CRITICAL | HIGH | MEDIUM | LOW,
 	"ruleRating": riskRating(severity),
-	"ruleID": resource.index,
+	"ruleKey": resource.index,
 	"ruleName": resource.change.after.name,
 	"ruleAction": rule_action(resource.change.after.allow[_]),
 	"ruleDirection": resource.change.after.direction,

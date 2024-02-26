@@ -49,7 +49,7 @@
         "priority": 1000,
         "sources": [
             "trust-me-mixed",
-            "172.16.0.0/12"
+            "172.16.0.0/13"
         ],
         "targets": [],
         "rules": [
