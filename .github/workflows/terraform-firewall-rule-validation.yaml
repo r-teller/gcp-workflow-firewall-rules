@@ -138,16 +138,16 @@ jobs:
 
             console.log('Parsed issues:', issues); // Add this line to print the parsed issues
 
-            let tableHeader = '| # | Action |  Rule Name | Rule Action | Rule Rating | Severity Indicator |\n';
+            let tableHeader = '| # | Action |  Rule Name | Rule Action | Rule Rating | Violation Count | Severity Indicator |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- | --- |\n';
             let tableRows = [];
             let index = 0;
             for (const key in issues) {
-              const issue = issues[key];
-              const metadata = issue.metadata; // Get the metadata object from the issue object
-              const action = metadata?.action ?? 'N/A';
-              const ruleAction = metadata?.ruleAction ?? 'N/A'; 
-              const ruleName = metadata?.ruleName ?? 'N/A';
+              const issue = issues[key];              
+              const action = issue?.action ?? 'N/A';
+              const ruleAction = issue?.ruleAction ?? 'N/A'; 
+              const ruleName = issue?.ruleName ?? 'N/A';
+              const voilationCount  = issue?.totalCount ?? 'N/A';
               const totalRuleRating = issue.totalRuleRating;
               let severityIndicator = '🔴'; // Default to red circle
             
@@ -157,7 +157,7 @@ jobs:
                 severityIndicator = '⚠️'; // Yellow caution sign for totalRuleRating > 1 & < 999
               }
             
-              tableRows.push(`| ${index + 1} |${action} |  ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${severityIndicator} |`);
+              tableRows.push(`| ${index + 1} |${action} |  ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${voilationCount} | ${severityIndicator} |`);
               index++;
             }
             
