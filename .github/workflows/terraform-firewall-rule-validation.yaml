@@ -139,7 +139,7 @@ jobs:
             console.log('Parsed issues:', issues); // Add this line to print the parsed issues
 
             let tableHeader = '| # | Action |  Rule Name | Rule Action | Rule Rating | Violation Count | Severity Indicator |\n';
-            let tableSeparator = '| --- | --- | --- | --- | --- | --- |\n';
+            let tableSeparator = '| --- | --- | --- | --- | --- | --- | --- |\n';
             let tableRows = [];
             let index = 0;
             for (const key in issues) {
