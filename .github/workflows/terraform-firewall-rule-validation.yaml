@@ -134,12 +134,11 @@ jobs:
             const issuesJson = fs.readFileSync('./failures.json', {encoding: 'utf8'});
             const issues = JSON.parse(issuesJson);
 
-            let tableHeader = '| # | Action | Policy Name | Rule Name | Indicator |\n';
+            let tableHeader = '| # | Action |  Rule Name | Rule Rating |Indicator |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- |\n';
             let tableRows = issues.map((issue, index)=> {
               const { metadata } = issue;
-              const action = metadata?.action ?? 'N/A'; // Use nullish coalescing and optional chaining
-              const namespace = metadata?.namespace ?? 'N/A';
+              const action = metadata?.ruleAction ?? 'N/A'; // Use nullish coalescing and optional chaining
               const ruleName = metadata?.ruleName ?? 'N/A';
               const totalRuleRating = issue.totalRuleRating;
               let severityIndicator = '🔴'; // Default to red circle
@@ -150,10 +149,10 @@ jobs:
                 severityIndicator = '⚠️'; // Yellow caution sign for totalRuleRating > 1 & < 999
               }
             
-              return `| ${index + 1} |${action} | ${namespace} | ${ruleName} | ${severityIndicator} |`;
+              return `| ${index + 1} |${action} |  ${ruleName} | ${totalRuleRating} | ${severityIndicator} |`;
             }).join('\n');
             
-
+            /*
             //# // Construct detailed messages
             //# let detailedMessages = "#### Detailed Messages:\n\n" + issues.map((issue, index) => {
             //#   const { msg, metadata } = issue;
@@ -183,9 +182,10 @@ jobs:
               return `| ${index + 1} | ${details} |`;
             }).join('\n');
             
-                        
             const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}\n\n${detailedMessages}`;
-            
+            */
+            const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}`;
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
