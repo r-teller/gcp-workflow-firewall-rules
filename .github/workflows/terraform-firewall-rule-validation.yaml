@@ -178,7 +178,11 @@ jobs:
               const totalRuleRating = issue.totalRuleRating;
               const project = issue?.project ?? 'N/A';
               const network = issue?.network ?? 'N/A';
-              const violation_overview = issue?.violation_overview ?? [];
+              const fileName = issue?.fileName ?? 'N/A';
+              const environment = issue?.environment ?? 'N/A';
+              const prefix = issue?.prefix ?? 'N/A';
+              const ruleId = issue?.ruleId ?? 'N/A';
+              const violationOverview = issue?.violationOverview ?? [];
 
               let severityIndicator = '🔴'; // Default to red circle
             
@@ -194,10 +198,14 @@ jobs:
                             `**Rule Action**: ${ruleAction}<br>` +
                             `**Rule Direction**: ${ruleDirection}<br>` +
                             `**Rule Priority**: ${ruleName}<br>` +
+                            `**Rule ID**: ${ruleName}<br>` +
                             `**Project**: ${project}<br>` +
                             `**Network**: ${network}<br>` +
+                            `**File Name**: ${fileName}<br>` +
+                            `**Environment**: ${environment}<br>` +
+                            `**Prefix**: ${prefix}<br>` +
                             `**Violation Overview**:<br>` +
-                            violation_overview.map(violation => {
+                            violationOverview.map(violation => {
                               return `&bull; **Message**: ${violation.message ?? 'N/A'}<br>` +
                                      `&bull; **Namespace**: ${violation.namespace ?? 'N/A'}<br>` +
                                      `&bull; **Severity**: ${violation.severity ?? 'N/A'}<br>` +
