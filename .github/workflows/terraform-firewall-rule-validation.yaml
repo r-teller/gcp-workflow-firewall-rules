@@ -137,6 +137,10 @@ jobs:
             const issues = JSON.parse(issuesJson);
 
             console.log('Parsed issues:', issues); // Add this line to print the parsed issues
+            
+            let detailedMessages = "#### Detailed Messages:\n\n" + 
+            "| # | Details |\n" + 
+            "|---|---------|\n";
 
             let tableHeader = '| # | Action |  Rule Name | Rule Action | Rule Rating | Violation Count | Severity Indicator |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- | --- | --- |\n';
@@ -149,6 +153,10 @@ jobs:
               const ruleName = issue?.ruleName ?? 'N/A';
               const voilationCount  = issue?.totalCount ?? 'N/A';
               const totalRuleRating = issue.totalRuleRating;
+              const project = issue?.project ?? 'N/A';
+              const network = issue?.network ?? 'N/A';
+              const violation_overview = issue?.violation_overview ?? [];
+
               let severityIndicator = '🔴'; // Default to red circle
             
               if (totalRuleRating === 1) {
@@ -157,24 +165,7 @@ jobs:
                 severityIndicator = '⚠️'; // Yellow caution sign for totalRuleRating > 1 & < 999
               }
               tableRows.push(`| ${index + 1} |${action} |  ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${voilationCount} | ${severityIndicator} |`);
-              index++;
-            }
-            
-            let detailedMessages = "#### Detailed Messages:\n\n" + 
-            "| # | Details |\n" + 
-            "|---|---------|\n";
-            
-            let index = 0; // Initialize index for numbering
-            for (const key in issues) {
-              const issue = issues[key];
-              // Directly access properties from the issue object
-              const action = issue.action ?? 'N/A';
-              const ruleAction = issue.ruleAction ?? 'N/A';
-              const ruleName = issue.ruleName ?? 'N/A';
-              const project = issue.project ?? 'N/A';
-              const network = issue.network ?? 'N/A';
-              const violation_overview = issue.violation_overview ?? [];
-            
+
               let details = `**Action**: ${action}<br>` +
                             `**Rule Action**: ${ruleAction}<br>` +
                             `**Rule Name**: ${ruleName}<br>` +
@@ -189,8 +180,9 @@ jobs:
                             }).join('<br>');
             
               detailedMessages += `| ${index + 1} | ${details} |\n`;
-              index++; // Increment index for the next item
-            }
+              
+              index++;
+            }                
 
             const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows.join('\n')}\n\n${detailedMessages}`;
 
