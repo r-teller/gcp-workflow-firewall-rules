@@ -60,6 +60,7 @@ jobs:
               ruleID: .metadata.ruleID, 
               ruleRating: .metadata.ruleRating, 
               msg: .msg, 
+              action: .metadata.action,
               namespace: $root.namespace, 
               severity: .metadata.severity, 
               ruleAction: .metadata.ruleAction, 
@@ -82,6 +83,7 @@ jobs:
               totalRuleRating: map(.ruleRating) | add, 
               totalCount: length, 
               ruleAction: .[0].ruleAction, 
+              action: .[0].action, 
               network: .[0].network, 
               project: .[0].project, 
               ruleName: .[0].ruleName, 
@@ -134,11 +136,12 @@ jobs:
             const issuesJson = fs.readFileSync('./result.failures_grouped.json', {encoding: 'utf8'});
             const issues = JSON.parse(issuesJson);
 
-            let tableHeader = '| # | Action |  Rule Name | Rule Rating |Indicator |\n';
-            let tableSeparator = '| --- | --- | --- | --- | --- |\n';
+            let tableHeader = '| # | Action |  Rule Name | Rule Action | Rule Rating | Severity Indicator |\n';
+            let tableSeparator = '| --- | --- | --- | --- | --- | --- |\n';
             let tableRows = issues.map((issue, index)=> {
               const { metadata } = issue;
-              const action = metadata?.ruleAction ?? 'N/A'; // Use nullish coalescing and optional chaining
+              const action = metadata?.action ?? 'N/A';
+              const ruleAction = metadata?.ruleAction ?? 'N/A'; 
               const ruleName = metadata?.ruleName ?? 'N/A';
               const totalRuleRating = issue.totalRuleRating;
               let severityIndicator = '🔴'; // Default to red circle
@@ -149,7 +152,7 @@ jobs:
                 severityIndicator = '⚠️'; // Yellow caution sign for totalRuleRating > 1 & < 999
               }
             
-              return `| ${index + 1} |${action} |  ${ruleName} | ${totalRuleRating} | ${severityIndicator} |`;
+              return `| ${index + 1} |${action} |  ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${severityIndicator} |`;
             }).join('\n');
             
             /*
