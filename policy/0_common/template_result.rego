@@ -30,15 +30,23 @@ template_result(severity, resource, message) := {
 	"severity": severity, # CRITICAL | HIGH | MEDIUM | LOW,
 	"ruleRating": risk_rating(severity),
 	"ruleKey": resource.index,
-	"ruleName": resource.change.after.name,
-	"ruleAction": rule_action(resource.change.after.allow[_]),
-	"ruleDirection": resource.change.after.direction,
-	"rulePriority": resource.change.after.priority,
-	"project": resource.change.after.project,
-	"network": extract_last_path_component(resource.change.after.network),
+	"ruleName": select_resource_change(resource.change).name,
+	"ruleAction": rule_action(select_resource_change(resource.change).allow[_]),
+	"ruleDirection": select_resource_change(resource.change).direction,
+	"rulePriority": select_resource_change(resource.change).priority,
+	"project": select_resource_change(resource.change).project,
+	"network": extract_last_path_component(select_resource_change(resource.change).network),
 	"msg": message,
 	"message": message,
 }
+
+select_resource_change(resource_changes) = result_change {
+	resource_changes.actions[_] == "delete"
+	result_change = resource_changes.before
+} else {
+	result_change = resource_changes.after
+}
+
 
 # extract_last_path_component extracts the last path component from a given string.
 # This is useful for parsing URLs or any string that uses '/' to separate components,
