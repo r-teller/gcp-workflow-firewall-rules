@@ -1,13 +1,45 @@
 [
     {
-        "id": "allow-mixed-ingress-internal",
-        "name": "allow-mixed-ingress-internal",
+        "id": "allow-mixed-ingress-src-ranges-internal",
+        "name": "allow-mixed-ingress-src-ranges-internal",
         "action": "allow",
         "direction": "INGRESS",
         "log_config": "INCLUDE_ALL_METADATA",
         "priority": 1000,
         "sources": [
             "192.168.23.0/24"
+        ],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "53",
+                    "443",
+                    "8000-8999"
+                ]
+            },
+            {
+                "protocol": "UDP",
+                "ports": [
+                    "53"
+                ]
+            },
+            {
+                "protocol": "ICMP",
+                "ports": []
+            }
+        ]
+    },
+    {
+        "id": "allow-mixed-ingress-src-tags-internal",
+        "name": "allow-mixed-ingress-src-tags-internal",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [
+            "allow-mixed-ingress-src-tags-internal"
         ],
         "targets": [],
         "rules": [

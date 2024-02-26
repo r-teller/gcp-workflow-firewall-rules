@@ -52,10 +52,54 @@ jobs:
       - name: Check for non-low severity issues
         id: check_results
         run: |
-          # Generate JSON file with all firewall changes with their corresponding risk rating
-          jq 'map((.failures[]?.metadata.namespace) = .namespace) | [.[].failures[]?]' ./result.json > ./failures.json
-          resultLength=$(jq '[.[] | select(.metadata.severity != "LOW")] | length' ./failures.json )
-          if [ "$resultLength" -eq 0 ]; then
+          # First Command: This command processes the JSON data and outputs an intermediate result that formats the data into the desired structure for each violation. 
+          jq '[.[] | 
+            . as $root | 
+            ($root.warnings // [] + $root.failures // [])[] | 
+            {
+              ruleID: .metadata.ruleID, 
+              ruleRating: .metadata.ruleRating, 
+              msg: .msg, 
+              namespace: $root.namespace, 
+              severity: .metadata.severity, 
+              ruleAction: .metadata.ruleAction, 
+              network: .metadata.network, 
+              project: .metadata.project, 
+              ruleName: .metadata.ruleName, 
+              direction: .metadata.ruleDirection, 
+              rulePriority: .metadata.rulePriority
+            }
+          ]' ./result.json > ./result.failures_list.json
+
+          # Second Command: This command takes the output of the first command and then 
+          # - groups the data by ruleID
+          # - calculates the totalRuleRating 
+          # - inserts violation_overview for each rule
+          # - sorts the rules by totalRuleRating from high to low.
+          jq 'group_by(.ruleID) | 
+          map({
+            (.[0].ruleID): {
+              totalRuleRating: map(.ruleRating) | add, 
+              totalCount: length, 
+              ruleAction: .[0].ruleAction, 
+              network: .[0].network, 
+              project: .[0].project, 
+              ruleName: .[0].ruleName, 
+              direction: .[0].direction, 
+              rulePriority: .[0].rulePriority, 
+              violation_overview: (map({
+                message: .msg, 
+                namespace: .namespace, 
+                severity: .severity, 
+                ruleRating: .ruleRating
+              }) | sort_by(.ruleRating) | reverse)
+            }
+          }) | 
+          add | to_entries | sort_by(.value.totalRuleRating) | reverse | 
+          from_entries' ./result.failures_list.json > ./result.failures_grouped.json
+
+          nonLowFailureCount=$(jq '[.[] | select(.totalRuleRating == 1)] | length' ./result.failures_grouped.json)
+          if [ "$nonLowFailureCount" -eq 0 ]; then
             echo "No issues with severity higher than LOW found."
             echo "::set-output name=approve::true"
           else
@@ -90,17 +134,25 @@ jobs:
             const issuesJson = fs.readFileSync('./failures.json', {encoding: 'utf8'});
             const issues = JSON.parse(issuesJson);
 
-            let tableHeader = '| # | Action | Policy Name | Rule Name | Severity | Indicator |\n';
-            let tableSeparator = '| --- | --- | --- | --- | --- | --- |\n';
+            let tableHeader = '| # | Action | Policy Name | Rule Name | Indicator |\n';
+            let tableSeparator = '| --- | --- | --- | --- | --- |\n';
             let tableRows = issues.map((issue, index)=> {
               const { metadata } = issue;
               const action = metadata?.action ?? 'N/A'; // Use nullish coalescing and optional chaining
               const namespace = metadata?.namespace ?? 'N/A';
               const ruleName = metadata?.ruleName ?? 'N/A';
-              const severityIndicator = metadata?.severity === 'LOW' ? '✅' : '🔴';
-              const severity = metadata?.severity ?? 'N/A';
-              return `| ${index + 1} |${action} | ${namespace} | ${ruleName} | ${severity} | ${severityIndicator} |`;
+              const totalRuleRating = issue.totalRuleRating;
+              let severityIndicator = '🔴'; // Default to red circle
+            
+              if (totalRuleRating === 1) {
+                severityIndicator = '✅'; // Green check for totalRuleRating == 1
+              } else if (totalRuleRating > 1 && totalRuleRating < 999) {
+                severityIndicator = '⚠️'; // Yellow caution sign for totalRuleRating > 1 & < 999
+              }
+            
+              return `| ${index + 1} |${action} | ${namespace} | ${ruleName} | ${severityIndicator} |`;
             }).join('\n');
+            
 
             //# // Construct detailed messages
             //# let detailedMessages = "#### Detailed Messages:\n\n" + issues.map((issue, index) => {
@@ -112,7 +164,7 @@ jobs:
             "| # | Details |\n" + 
             "|---|---------|\n" + 
             issues.map((issue, index) => {
-              const { msg, metadata } = issue;
+              const { msg, metadata, violation_overview } = issue;
               // Use <br> for line breaks within the same table cell
               let details = `**Message**: ${msg}<br>` +
                             `**Severity**: ${metadata?.severity ?? 'N/A'}<br>` +
@@ -120,9 +172,17 @@ jobs:
                             `**Policy Name**: ${metadata?.namespace ?? 'N/A'}<br>` +
                             `**Rule Name**: ${metadata?.ruleName ?? 'N/A'}<br>` +
                             `**Project**: ${metadata?.project ?? 'N/A'}<br>` +
-                            `**Network**: ${metadata?.network ?? 'N/A'}`;
+                            `**Network**: ${metadata?.network ?? 'N/A}'<br>` +
+                            `**Violation Overview**:<br>` +
+                            violation_overview.map((violation, i) => {
+                              return `--- **message**: ${violation.message ?? 'N/A'}<br>` +
+                                     `--- **namespace**: ${violation.namespace ?? 'N/A'}<br>` +
+                                     `--- **severity**: ${violation.severity ?? 'N/A'}<br>` +
+                                     `--- **ruleRating**: ${violation.ruleRating ?? 'N/A'}`;
+                            }).join('<br>'); // Include all violations in the violation_overview array
               return `| ${index + 1} | ${details} |`;
             }).join('\n');
+            
                         
             const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}\n\n${detailedMessages}`;
             

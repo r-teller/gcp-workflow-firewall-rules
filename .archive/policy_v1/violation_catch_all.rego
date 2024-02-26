@@ -19,5 +19,6 @@ violation_catch_all_allow[result] {
 		"CATCH_ALL",
 		resource,
 		"Catch-all rule used for tracking to identify any rule that is not being audited",
+		"1",
 	)
 }
