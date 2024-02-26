@@ -140,8 +140,11 @@ jobs:
 
             let tableHeader = '| # | Action |  Rule Name | Rule Action | Rule Rating | Severity Indicator |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- | --- |\n';
-            let tableRows = Object.values(issues).map((issue, index)=> {
-              const { metadata } = issue;
+            let tableRows = [];
+            let index = 0;
+            for (const key in issues) {
+              const issue = issues[key];
+              const metadata = issue.metadata; // Get the metadata object from the issue object
               const action = metadata?.action ?? 'N/A';
               const ruleAction = metadata?.ruleAction ?? 'N/A'; 
               const ruleName = metadata?.ruleName ?? 'N/A';
@@ -154,8 +157,9 @@ jobs:
                 severityIndicator = '⚠️'; // Yellow caution sign for totalRuleRating > 1 & < 999
               }
             
-              return `| ${index + 1} |${action} |  ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${severityIndicator} |`;
-            }).join('\n');
+              tableRows.push(`| ${index + 1} |${action} |  ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${severityIndicator} |`);
+              index++;
+            }
             
             const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}`;
 
