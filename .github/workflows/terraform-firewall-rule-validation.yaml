@@ -149,8 +149,10 @@ jobs:
             for (const key in issues) {
               const issue = issues[key];              
               const action = issue?.action ?? 'N/A';
-              const ruleAction = issue?.ruleAction ?? 'N/A'; 
               const ruleName = issue?.ruleName ?? 'N/A';
+              const ruleAction = issue?.ruleAction ?? 'N/A'; 
+              const ruleDirection = issue?.direction ?? 'N/A'; 
+              const rulePriority = issue?.rulePriority ?? 'N/A';
               const voilationCount  = issue?.totalCount ?? 'N/A';
               const totalRuleRating = issue.totalRuleRating;
               const project = issue?.project ?? 'N/A';
@@ -167,16 +169,18 @@ jobs:
               tableRows.push(`| ${index + 1} |${action} |  ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${voilationCount} | ${severityIndicator} |`);
 
               let details = `**Action**: ${action}<br>` +
-                            `**Rule Action**: ${ruleAction}<br>` +
                             `**Rule Name**: ${ruleName}<br>` +
+                            `**Rule Action**: ${ruleAction}<br>` +
+                            `**Rule Direction**: ${ruleDirection}<br>` +
+                            `**Rule Priority**: ${ruleName}<br>` +
                             `**Project**: ${project}<br>` +
                             `**Network**: ${network}<br>` +
                             `**Violation Overview**:<br>` +
                             violation_overview.map(violation => {
-                              return `--- **Message**: ${violation.message ?? 'N/A'}<br>` +
-                                     `--- **Namespace**: ${violation.namespace ?? 'N/A'}<br>` +
-                                     `--- **Severity**: ${violation.severity ?? 'N/A'}<br>` +
-                                     `--- **Rule Rating**: ${violation.ruleRating ?? 'N/A'}`;
+                              return `&bull; **Message**: ${violation.message ?? 'N/A'}<br>` +
+                                     `&bull; **Namespace**: ${violation.namespace ?? 'N/A'}<br>` +
+                                     `&bull; **Severity**: ${violation.severity ?? 'N/A'}<br>` +
+                                     `&bull; **Rule Rating**: ${violation.ruleRating ?? 'N/A'}`;
                             }).join('<br>');
             
               detailedMessages += `| ${index + 1} | ${details} |\n`;
