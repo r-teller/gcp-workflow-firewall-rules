@@ -155,38 +155,6 @@ jobs:
               return `| ${index + 1} |${action} |  ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${severityIndicator} |`;
             }).join('\n');
             
-            /*
-            //# // Construct detailed messages
-            //# let detailedMessages = "#### Detailed Messages:\n\n" + issues.map((issue, index) => {
-            //#   const { msg, metadata } = issue;
-            //#   return `${index + 1}. \n - Error Message: ${msg} \n - Severity: ${metadata?.severity ?? 'N/A'} \n - Project: ${metadata?.project ?? 'N/A'} \n - Network: ${metadata?.network ?? 'N/A'}`;
-            //# }).join('\n\n');
-
-            let detailedMessages = "#### Detailed Messages:\n\n" + 
-            "| # | Details |\n" + 
-            "|---|---------|\n" + 
-            issues.map((issue, index) => {
-              const { msg, metadata, violation_overview } = issue;
-              // Use <br> for line breaks within the same table cell
-              let details = `**Message**: ${msg}<br>` +
-                            `**Severity**: ${metadata?.severity ?? 'N/A'}<br>` +
-                            `**Action**: ${metadata?.action ?? 'N/A'}<br>` +
-                            `**Policy Name**: ${metadata?.namespace ?? 'N/A'}<br>` +
-                            `**Rule Name**: ${metadata?.ruleName ?? 'N/A'}<br>` +
-                            `**Project**: ${metadata?.project ?? 'N/A'}<br>` +
-                            `**Network**: ${metadata?.network ?? 'N/A}'<br>` +
-                            `**Violation Overview**:<br>` +
-                            violation_overview.map((violation, i) => {
-                              return `--- **message**: ${violation.message ?? 'N/A'}<br>` +
-                                     `--- **namespace**: ${violation.namespace ?? 'N/A'}<br>` +
-                                     `--- **severity**: ${violation.severity ?? 'N/A'}<br>` +
-                                     `--- **ruleRating**: ${violation.ruleRating ?? 'N/A'}`;
-                            }).join('<br>'); // Include all violations in the violation_overview array
-              return `| ${index + 1} | ${details} |`;
-            }).join('\n');
-            
-            const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}\n\n${detailedMessages}`;
-            */
             const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}`;
 
             await github.rest.issues.createComment({
