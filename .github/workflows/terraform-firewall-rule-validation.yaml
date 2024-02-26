@@ -156,7 +156,7 @@ jobs:
               } else if (totalRuleRating > 1 && totalRuleRating < 999) {
                 severityIndicator = '⚠️'; // Yellow caution sign for totalRuleRating > 1 & < 999
               }
-            
+              console.log(index)
               tableRows.push(`| ${index + 1} |${action} |  ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${voilationCount} | ${severityIndicator} |`);
               index++;
             }
