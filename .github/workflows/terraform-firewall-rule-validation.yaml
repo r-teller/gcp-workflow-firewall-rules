@@ -160,8 +160,39 @@ jobs:
               index++;
             }
             
-            console.log(tableRows)
-            const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows.join('\n')}`;
+            let detailedMessages = "#### Detailed Messages:\n\n" + 
+            "| # | Details |\n" + 
+            "|---|---------|\n";
+            
+            let index = 0; // Initialize index for numbering
+            for (const key in issues) {
+              const issue = issues[key];
+              // Directly access properties from the issue object
+              const action = issue.action ?? 'N/A';
+              const ruleAction = issue.ruleAction ?? 'N/A';
+              const ruleName = issue.ruleName ?? 'N/A';
+              const project = issue.project ?? 'N/A';
+              const network = issue.network ?? 'N/A';
+              const violation_overview = issue.violation_overview ?? [];
+            
+              let details = `**Action**: ${action}<br>` +
+                            `**Rule Action**: ${ruleAction}<br>` +
+                            `**Rule Name**: ${ruleName}<br>` +
+                            `**Project**: ${project}<br>` +
+                            `**Network**: ${network}<br>` +
+                            `**Violation Overview**:<br>` +
+                            violation_overview.map(violation => {
+                              return `--- **Message**: ${violation.message ?? 'N/A'}<br>` +
+                                     `--- **Namespace**: ${violation.namespace ?? 'N/A'}<br>` +
+                                     `--- **Severity**: ${violation.severity ?? 'N/A'}<br>` +
+                                     `--- **Rule Rating**: ${violation.ruleRating ?? 'N/A'}`;
+                            }).join('<br>');
+            
+              detailedMessages += `| ${index + 1} | ${details} |\n`;
+              index++; // Increment index for the next item
+            }
+
+            const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows.join('\n')}\n\n${detailedMessages}`;
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
