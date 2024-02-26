@@ -1,39 +1,40 @@
 [
     {
-        "id": "allow-tcp-443-ingress-external-implicit",
-        "name": "allow-tcp-443-ingress-external-implicit",
-        "action": "allow",
-        "direction": "INGRESS",
-        "log_config": "INCLUDE_ALL_METADATA",
-        "priority": 1000,
-        "sources": [],
-        "targets": [],
-        "rules": [
-            {
-                "protocol": "TCP",
-                "ports": [
-                    "443"
-                ]
-            }
-        ]
-    },
-    {
-        "id": "allow-tcp-443-ingress-external-explicit",
-        "name": "allow-tcp-443-ingress-external-explicit",
+        "id": "allow-tcp-mixed-ingress-gfe-explicit-port-range",
+        "name": "allow-tcp-mixed-ingress-gfe-explicit-port-range",
         "action": "allow",
         "direction": "INGRESS",
         "log_config": "INCLUDE_ALL_METADATA",
         "priority": 1000,
         "sources": [
-            "0.0.0.0/0",
-            "1.1.1.1/32",
-            "2.2.2.2/32"
+            "130.211.0.0/22"
         ],
         "targets": [],
         "rules": [
             {
                 "protocol": "TCP",
                 "ports": [
+                    "8000-8999"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "allow-tcp-mixed-ingress-gfe-explicit-ports",
+        "name": "allow-tcp-mixed-ingress-gfe-explicit-ports",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [
+            "130.211.0.0/22"
+        ],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "80",
                     "443"
                 ]
             }

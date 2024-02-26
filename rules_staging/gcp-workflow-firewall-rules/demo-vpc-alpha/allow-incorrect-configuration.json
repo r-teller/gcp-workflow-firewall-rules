@@ -1,0 +1,124 @@
+[
+    {
+        "id": "allow-invliad-configuration-log-disabled",
+        "name": "allow-invliad-configuration-log-disabled",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "DISABLED",
+        "priority": 100,
+        "sources": [
+            "35.235.240.0/20"
+        ],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "443"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "allow-invliad-configuration-all-explicit-to-all-explicit",
+        "name": "allow-invliad-configuration-all-explicit-to-all-explicit",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [
+            "0.0.0.0/0"
+        ],
+        "targets": [
+            "0.0.0.0/0"
+        ],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "443"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "allow-invliad-configuration-all-implicit-to-all-implicit",
+        "name": "allow-invliad-configuration-all-implicit-to-all-implicit",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "443"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "allow-invliad-configuration-all-explicit-to-all-implicit",
+        "name": "allow-invliad-configuration-all-explicit-to-all-implicit",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [
+            "0.0.0.0/0"
+        ],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "443"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "allow-invliad-configuration-all-implicit-to-all-explicit",
+        "name": "allow-invliad-configuration-all-implicit-to-all-explicit",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [],
+        "targets": [
+            "0.0.0.0/0"
+        ],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "443"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "allow-invliad-configuration-all-explicit-multi-to-all-implicit",
+        "name": "allow-invliad-configuration-all-explicit-multi-to-all-implicit",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [
+            "0.0.0.0/1",
+            "128.0.0.0/2",
+            "192.0.0.0/2"
+        ],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "443"
+                ]
+            }
+        ]
+    }
+]
