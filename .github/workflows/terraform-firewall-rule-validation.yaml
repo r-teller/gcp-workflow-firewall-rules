@@ -131,7 +131,7 @@ jobs:
           script: |
             const fs = require('fs');
             const issue_number = context.issue.number;
-            const issuesJson = fs.readFileSync('./failures.json', {encoding: 'utf8'});
+            const issuesJson = fs.readFileSync('./result.failures_grouped.json', {encoding: 'utf8'});
             const issues = JSON.parse(issuesJson);
 
             let tableHeader = '| # | Action |  Rule Name | Rule Rating |Indicator |\n';
