@@ -199,6 +199,7 @@ jq '[.[] |
     ruleID: .metadata.ruleID, 
     ruleRating: .metadata.ruleRating, 
     msg: .msg, 
+    action: .metadata.action,
     namespace: $root.namespace, 
     severity: .metadata.severity, 
     ruleAction: .metadata.ruleAction, 
@@ -210,12 +211,14 @@ jq '[.[] |
   }
 ]' .staging.result.json > .staging.failures_list.json
 
+
 jq 'group_by(.ruleID) | 
   map({
     (.[0].ruleID): {
       totalRuleRating: map(.ruleRating) | add, 
       totalCount: length, 
       ruleAction: .[0].ruleAction, 
+      action: .[0].action, 
       network: .[0].network, 
       project: .[0].project, 
       ruleName: .[0].ruleName, 

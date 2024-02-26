@@ -100,7 +100,7 @@ jobs:
           add | to_entries | sort_by(.value.totalRuleRating) | reverse | 
           from_entries' ./result.failures_list.json > ./result.failures_grouped.json
 
-          nonLowFailureCount=$(jq '[.[] | select(.totalRuleRating == 1)] | length' ./result.failures_grouped.json)
+          nonLowFailureCount=$(jq '[.[] | select(.totalRuleRating != 1)] | length' ./result.failures_grouped.json)
           if [ "$nonLowFailureCount" -eq 0 ]; then
             echo "No issues with severity higher than LOW found."
             echo "::set-output name=approve::true"
@@ -140,7 +140,7 @@ jobs:
 
             let tableHeader = '| # | Action |  Rule Name | Rule Action | Rule Rating | Severity Indicator |\n';
             let tableSeparator = '| --- | --- | --- | --- | --- | --- |\n';
-            let tableRows = issues.map((issue, index)=> {
+            let tableRows = Object.values(issues).map((issue, index)=> {
               const { metadata } = issue;
               const action = metadata?.action ?? 'N/A';
               const ruleAction = metadata?.ruleAction ?? 'N/A'; 
