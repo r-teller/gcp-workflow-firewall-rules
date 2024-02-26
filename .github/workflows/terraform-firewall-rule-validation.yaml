@@ -161,7 +161,7 @@ jobs:
             }
             
             console.log(tableRows)
-            const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows}`;
+            const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows.join('\n')}`;
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
