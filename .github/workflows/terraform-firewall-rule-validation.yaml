@@ -62,7 +62,7 @@ jobs:
             . as $root | 
             ($root.warnings // [] + $root.failures // [])[] | 
             {
-              ruleID: .metadata.ruleID, 
+              ruleKey: .metadata.ruleKey, 
               ruleRating: .metadata.ruleRating, 
               msg: .msg, 
               action: .metadata.action,
@@ -89,7 +89,7 @@ jobs:
           ' ./tfplan.json > ./result.firewall_rules_map.json
 
           # Second Command: This command takes the output of the first command and then 
-          # - groups the data by ruleID
+          # - groups the data by ruleKey
           # - calculates the totalRuleRating 
           # - inserts violation_overview for each rule
           # - sorts the rules by totalRuleRating from high to low.
