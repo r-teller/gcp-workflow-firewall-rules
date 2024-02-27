@@ -55,7 +55,7 @@ template_result(severity, resource, message) := {
 select_resource_change(resource_changes) = result_change {
 	resource_changes.actions[_] == "delete"
 	result_change = resource_changes.before
-} else {
+} else = result_change {
 	result_change = resource_changes.after
 }
 
