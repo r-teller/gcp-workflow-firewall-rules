@@ -101,6 +101,7 @@ jobs:
               totalCount: length, 
               ruleAction: .[0].ruleAction,
               fileName: ($rulesMap[0][.[0].ruleKey].file_name),
+              ruleIndex: ($rulesMap[0][.[0].ruleKey].rule_index),
               ruleId: ($rulesMap[0][.[0].ruleKey].id),
               environemnt: ($rulesMap[0][.[0].ruleKey].environemnt),
               prefix: ($rulesMap[0][.[0].ruleKey].prefix),
@@ -179,6 +180,7 @@ jobs:
               const project = issue?.project ?? 'N/A';
               const network = issue?.network ?? 'N/A';
               const fileName = issue?.fileName ?? 'N/A';
+              const ruleIndex = issue?.ruleIndex ?? 'N/A';
               const environment = issue?.environment ?? 'N/A';
               const prefix = issue?.prefix ?? 'N/A';
               const ruleId = issue?.ruleId ?? 'N/A';
@@ -202,6 +204,7 @@ jobs:
                             `**Project**: ${project}<br>` +
                             `**Network**: ${network}<br>` +
                             `**File Name**: ${fileName}<br>` +
+                            `**Rule Index**: ${ruleIndex}<br>` +
                             `**Environment**: ${environment}<br>` +
                             `**Prefix**: ${prefix}<br>` +
                             `**Violation Overview**:<br>` +

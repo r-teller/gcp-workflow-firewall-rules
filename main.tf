@@ -1,10 +1,11 @@
 locals {
   firewall_rule_path = "./rules"
   firewall_rule_sets = fileset(local.firewall_rule_path, "**/*.json")
-  firewall_rules = flatten([for rules in local.firewall_rule_sets : [
-    for k1, v1 in jsondecode(file("${local.firewall_rule_path}/${rules}")) : merge(
+  firewall_rules = flatten([for rules_file in local.firewall_rule_sets : [
+    for k1, v1 in jsondecode(file("${local.firewall_rule_path}/${rules_file}")) : merge(
       v1,
-      regex("(?P<project_id>[^/]*)/(?P<network>[^/]*)/(?P<file_name>.*$)", rules)
+      regex("(?P<project_id>[^/]*)/(?P<network>[^/]*)/(?P<file_name>.*$)", rules_file),
+      { rule_index = k1 },
     ) if length(v1) > 0
     ]
   ])
@@ -49,18 +50,3 @@ resource "local_file" "firewall_rules_map" {
   content  = jsonencode(module.firewall_rules.firewall_rules_map)
   filename = "${path.module}/outputs/managed.json"
 }
-
-
-# resource "google_compute_firewall" "foo" {
-#   name    = "foobar"
-#   project = "gcp-workflow-firewall-rules"
-#   network = "demo-vpc-alpha"
-
-#   source_ranges = ["0.0.0.0/0"]
-#   #   target_ranges = n
-
-#   allow {
-#     protocol = "tcp"
-#     ports    = [3389]
-#   }
-# }

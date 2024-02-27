@@ -89,6 +89,12 @@ Organize firewall rule files within the repository based on their corresponding 
 ### Mapping to GCP
 Ensure folder and file names accurately reflect their GCP counterparts for correct rule application.
 
+## References
+- [Conftest](https://conftest.dev)
+- [Open Policy Agent (OPA)](https://www.openpolicyagent.org/)
+- [Terraform Firewall Rule Module](https://github.com/r-teller/terraform-google-firewall-rules)
+- 
+
 ## Examples:
 ### Example: Running Terraform Plan and Policy Evaluation
 
@@ -130,7 +136,3 @@ This process will generate a `result.json` file containing the results of the po
 ## Contributions and Support
 - **Contributing:** Ensure your firewall rule changes meet the compliance and risk assessment criteria for smooth approval. Follow the submission process detailed above. Refer to the [Policy Guide](policy.md) for more information on compliance requirements.
 - **Support:** For assistance, questions, or issues, open an issue in the GitHub repository or contact the infrastructure team directly.
-
-## References
-- [Conftest](https://conftest.dev)
-- [Open Policy Agent (OPA)](https://www.openpolicyagent.org/)
