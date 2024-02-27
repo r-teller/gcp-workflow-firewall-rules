@@ -2,6 +2,7 @@
     {
         "id": "allow-tcp-443-ingress-iap-explicit",
         "name": "allow-tcp-443-ingress-iap-explicit",
+        "description": "test",
         "action": "allow",
         "direction": "INGRESS",
         "log_config": "INCLUDE_ALL_METADATA",
