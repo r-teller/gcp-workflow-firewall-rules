@@ -2,6 +2,7 @@
     {
         "id": "allow-tcp-all-ingress-iap-explicit",
         "name": "allow-tcp-all-ingress-iap-explicit",
+        "description": "Allow IAP traffic to local VMs",
         "action": "allow",
         "direction": "INGRESS",
         "log_config": "INCLUDE_ALL_METADATA",
