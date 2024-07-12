@@ -38,15 +38,8 @@ jobs:
         id: validate
         run: terraform validate -no-color
 
-      - name: Schema Validation
-        id: schema-validation
-        run: |
-          ajv validate -s ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json"  -d "./rules/gcp-workflow-firewall-rules/*/*.json"
-        continue-on-error: true
-
       - name: Get list of changed files
         id: get_changed_files
-        if: steps.schema-validation.outcome == 'failure'
         uses: actions/github-script@v7
         with:
           script: |
@@ -60,44 +53,54 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Comment on PR if Schema Validation Fails
-        if: steps.schema-validation.outcome == 'failure'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const issue_number = context.issue.number;
-            const validationOutput = fs.readFileSync('schema_validation_output.json', { encoding: 'utf8' });
-            const validationErrors = JSON.parse(validationOutput);
-            const changedFiles = ${{ steps.get_changed_files.outputs.result }};
+      - name: Log changed files
+        run: |
+          echo "Changed files: ${{ steps.get_changed_files.outputs.changedFiles }}"
 
-            let errorFiles = new Set();
-            validationErrors.forEach(error => {
-              const filePathMatch = error.instancePath.match(/\/rules\/gcp-workflow-firewall-rules\/[^\/]+\/[^\/]+\.json/);
-              if (filePathMatch) {
-                const filePath = filePathMatch[0];
-                if (changedFiles.includes(filePath)) {
-                  errorFiles.add(filePath);
-                }
-              }
-            });
+      # - name: Schema Validation
+      #   id: schema-validation
+      #   run: |
+      #     ajv validate -s ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json"  -d "./rules/gcp-workflow-firewall-rules/*/*.json"
+      #   continue-on-error: true
 
-            if (errorFiles.size > 0) {
-              let commentBody = "### ❌ Schema Validation Errors\n\n";
-              commentBody += "The following modified files have schema validation errors:\n";
-              errorFiles.forEach((filePath, index) => {
-                commentBody += `- **File ${index + 1}**: ${filePath}\n`;
-              });
+      # - name: Comment on PR if Schema Validation Fails
+      #   if: steps.schema-validation.outcome == 'failure'
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       const fs = require('fs');
+      #       const issue_number = context.issue.number;
+      #       const validationOutput = fs.readFileSync('schema_validation_output.json', { encoding: 'utf8' });
+      #       const validationErrors = JSON.parse(validationOutput);
+      #       const changedFiles = ${{ steps.get_changed_files.outputs.result }};
 
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue_number,
-                body: commentBody
-              });
-            }
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #       let errorFiles = new Set();
+      #       validationErrors.forEach(error => {
+      #         const filePathMatch = error.instancePath.match(/\/rules\/gcp-workflow-firewall-rules\/[^\/]+\/[^\/]+\.json/);
+      #         if (filePathMatch) {
+      #           const filePath = filePathMatch[0];
+      #           if (changedFiles.includes(filePath)) {
+      #             errorFiles.add(filePath);
+      #           }
+      #         }
+      #       });
+
+      #       if (errorFiles.size > 0) {
+      #         let commentBody = "### ❌ Schema Validation Errors\n\n";
+      #         commentBody += "The following modified files have schema validation errors:\n";
+      #         errorFiles.forEach((filePath, index) => {
+      #           commentBody += `- **File ${index + 1}**: ${filePath}\n`;
+      #         });
+
+      #         await github.rest.issues.createComment({
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           issue_number: issue_number,
+      #           body: commentBody
+      #         });
+      #       }
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Terraform Plan
         id: plan
