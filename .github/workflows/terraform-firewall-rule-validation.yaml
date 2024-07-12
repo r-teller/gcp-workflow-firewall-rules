@@ -42,7 +42,8 @@ jobs:
         id: schema-validation
         run: |
           ajv validate -s ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json"  -d "./rules/gcp-workflow-firewall-rules/*/*.json"
-
+        continue-on-error: false
+        
       - name: Terraform Plan
         id: plan
         run: |
