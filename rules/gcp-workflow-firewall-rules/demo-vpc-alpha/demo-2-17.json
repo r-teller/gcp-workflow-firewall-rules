@@ -19,7 +19,7 @@
   {
     "id": "allow-tcp-443-ingr-ext-e",
     "name": "allow-tcp-443-ingr-ext-e",
-    "action": "ALLOW",
+    "action": "aLLOW",
     "direction": "INGRESS",
     "log_config": "INCLUDE_ALL_METADATA",
     "priority": 1000,

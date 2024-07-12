@@ -2,7 +2,7 @@
   {
     "id": "allow-tcp-all-ingr-iap-e",
     "name": "allow-tcp-all-ingr-iap-e",
-    "action": "ALLOW",
+    "action": "aLLOW",
     "direction": "INGRESS",
     "log_config": "INCLUDE_ALL_METADATA",
     "priority": 1000,

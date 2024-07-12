@@ -42,8 +42,63 @@ jobs:
         id: schema-validation
         run: |
           ajv validate -s ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json"  -d "./rules/gcp-workflow-firewall-rules/*/*.json"
-        continue-on-error: false
-        
+        continue-on-error: true
+
+      - name: Get list of changed files
+        id: get_changed_files
+        if: steps.schema-validation.outputs.exitCode != 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const { data: changedFiles } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+            return changedFiles.map(file => file.filename);
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR if Schema Validation Fails
+        if: steps.schema-validation.outputs.exitCode != 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const issue_number = context.issue.number;
+            const validationOutput = fs.readFileSync('schema_validation_output.json', { encoding: 'utf8' });
+            const validationErrors = JSON.parse(validationOutput);
+            const changedFiles = ${{ steps.get_changed_files.outputs.result }};
+
+            let errorFiles = new Set();
+            validationErrors.forEach(error => {
+              const filePathMatch = error.instancePath.match(/\/rules\/gcp-workflow-firewall-rules\/[^\/]+\/[^\/]+\.json/);
+              if (filePathMatch) {
+                const filePath = filePathMatch[0];
+                if (changedFiles.includes(filePath)) {
+                  errorFiles.add(filePath);
+                }
+              }
+            });
+
+            if (errorFiles.size > 0) {
+              let commentBody = "### ❌ Schema Validation Errors\n\n";
+              commentBody += "The following modified files have schema validation errors:\n";
+              errorFiles.forEach((filePath, index) => {
+                commentBody += `- **File ${index + 1}**: ${filePath}\n`;
+              });
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue_number,
+                body: commentBody
+              });
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Terraform Plan
         id: plan
         run: |
@@ -135,10 +190,12 @@ jobs:
           nonLowFailureCount=$(jq '[.[] | select(.totalRuleRating != 1)] | length' ./result.failures_grouped.json)
           if [ "$nonLowFailureCount" -eq 0 ]; then
             echo "No issues with severity higher than LOW found."
-            echo "::set-output name=approve::true"
+            # echo "::set-output name=approve::true"
+            echo "approve=true" >> $GITHUB_ENV
           else
             echo "Issues with severity higher than LOW found."
-            echo "::set-output name=approve::false"
+            # echo "::set-output name=approve::false"
+            echo "approve=false" >> $GITHUB_ENV
           fi
 
       - name: Get list of changed files
