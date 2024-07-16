@@ -10,7 +10,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  terraform-schema-check:
+  firewall-rules-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Super-Linter
+        uses: github/super-linter@v4
+        env:
+          VALIDATE_JSON: true
+          FILTER_REGEX_INCLUDE: rules/.+\.json$
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  firewall-rules-schema-check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -49,7 +62,7 @@ jobs:
             return await script({github, context, core, changedFiles})
         continue-on-error: true
 
-  terraform-opa-check:
+  firewall-rules-opa-check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -57,7 +70,7 @@ jobs:
 
   pull-request-approver:
     runs-on: ubuntu-latest
-    needs: [terraform-schema-check, terraform-opa-check]
+    needs: [firewall-rules-lint, firewall-rules-schema-check, firewall-rules-opa-check]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
