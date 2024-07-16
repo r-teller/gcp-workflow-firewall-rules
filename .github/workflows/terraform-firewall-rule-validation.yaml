@@ -162,8 +162,8 @@ jobs:
           script: |
             const issue_number = context.issue.number;
             const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
-            console.log('jsonSchemaValidationErrors = ${{ fromJson(needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors).length }}');
-            console.log('opaValidationErrors = ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == false }}');
+            console.log('jsonSchemaValidationErrors = ${{ toJson(needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors).length }}');
+            console.log('criticalOpaViolationsDetected = ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}');
             await github.rest.pulls.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
