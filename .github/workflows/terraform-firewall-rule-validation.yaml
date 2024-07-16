@@ -105,6 +105,9 @@ jobs:
         firewall-rules-opa-check,
       ]
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Manual Approval Required
         id: manual-approval-required
         if: ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors }} || ${{ needs.firewall-rules-opa-check.outputs.opaValidationErrors }}
