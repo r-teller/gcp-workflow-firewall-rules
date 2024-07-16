@@ -12,6 +12,8 @@ concurrency:
 jobs:
   firewall-rules-schema-check:
     runs-on: ubuntu-latest
+    outputs:
+      jsonSchemaValidationErrors: ${{ steps.json_lint_and_schema_validation.outputs.jsonSchemaValidationErrors }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -93,6 +95,8 @@ jobs:
   firewall-rules-opa-check:
     needs: [firewall-rules-schema-check]
     runs-on: ubuntu-latest
+    outputs:
+      criticalOpaViolationsDetected: ${{ steps.opa_output_validation.outputs.criticalOpaViolationsDetected }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -159,7 +163,7 @@ jobs:
             const issue_number = context.issue.number;
             const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
             console.log('jsonSchemaValidationErrors = ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors }}');
-            console.log('opaValidationErrors = ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == false }}');
+            console.log('opaValidationErrors = ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected }}');
             await github.rest.pulls.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
