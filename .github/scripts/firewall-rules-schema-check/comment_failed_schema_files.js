@@ -16,8 +16,8 @@ module.exports = async ({
       error.errors.forEach((err) => {
         commentBody += `  - **Message**: ${err.message}\n`;
         commentBody += `  - **Data**: ${err.data}\n`;
-        commentBody += `  - **Path**: ${err.path}\n`;
-        commentBody += `  - **Schema**: ${err.schema}\n`;
+        commentBody += `  - **Path**: ${err.instancePath}\n`;
+        commentBody += `  - **Schema**: ${JSON.stringify(err.schema)}\n`;
       });
     });
   }
