@@ -2,7 +2,7 @@ module.exports = async ({ github, context, core }) => {
   // Define the list of path prefixes you want to filter by
   const pathPrefixes = [
     // Add more prefixes as needed
-    "rules/gcp-workflow-firewall-rules/",
+    "rules/",
   ];
 
   // Define the list of file extensions you want to include

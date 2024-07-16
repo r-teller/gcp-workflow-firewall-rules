@@ -16,8 +16,19 @@ jobs:
       - name: Install Prerequisites
         run: |
           sudo npm install -g ajv-cli
+
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
 
       - name: Get list of changed files
         id: check_files_changed
@@ -26,6 +37,33 @@ jobs:
           script: |
             const script = require('./.github/scripts/terraform-schema-check/get_list_changed_files.js')
             return await script({github, context, core})
+
+      - name: Schema Validation
+        id: schema_validation
+        run: |
+          echo '[]' > validation_errors.json
+          for file in ${{ steps.get_changed_files.outputs.changedFiles  }}; do
+            if [[ $file == rules/gcp-workflow-firewall-rules/*.json ]]; then
+              output=$(ajv validate -s ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json" -d "$file" --strict=false --verbose --errors=json 2>&1)
+              if [ $? -ne 0 ]; then
+                errors=$(echo "$output" | sed -E '1s/^(.+) invalid$/{"filename":"\1","errors":/; $s/$/}/' | jq '
+                  {
+                    filename,
+                    errors: [
+                      .errors[] 
+                      | select(has("params") and (.params | type) == "object" and (.params | has("passingSchemas")))
+                      | del(.parentSchema, .schema)
+                    ]
+                  } | select(.errors != [])
+                ')
+                if [ ! -z "$errors" ]; then
+                  jq --argjson new "$errors" '. += [$new]' validation_errors.json > temp.json && mv temp.json validation_errors.json
+                fi
+              fi
+            fi
+          done
+          echo "validation_errors=$(cat validation_errors.json | jq -c .)" >> $GITHUB_OUTPUT
+        continue-on-error: true
 
   terraform-opa-check:
     runs-on: ubuntu-latest
