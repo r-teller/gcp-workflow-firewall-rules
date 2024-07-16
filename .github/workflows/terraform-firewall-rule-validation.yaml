@@ -10,33 +10,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # firewall-rules-lint:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-
-  #     - name: Install jsonlint
-  #       run: npm install -g jsonlint
-
-  #     - name: Get list of changed files
-  #       id: check_files_changed
-  #       uses: actions/github-script@v7
-  #       with:
-  #         script: |
-  #           const script = require('./.github/scripts/terraform-schema-check/get_list_changed_files.js')
-  #           return await script({github, context, core})
-
-  #     - name: Run jsonlint
-  #       run: find rules -name '*.json' -print0 | xargs -0 jsonlint -qw
-
-  #     # - name: Run Super-Linter
-  #     #   uses: github/super-linter/slim@v4
-  #     #   env:
-  #     #     VALIDATE_JSON: true
-  #     #     FILTER_REGEX_INCLUDE: rules/.+\.json$
-  #     #     # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   firewall-rules-schema-check:
     runs-on: ubuntu-latest
     steps:
@@ -95,12 +68,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const script = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
+            const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
 
             if(${{ steps.json_lint_and_schema_validation.outputs.jsonSchemaValidationErrors }}) {
-              await script({github, context, add_label_name: 'json-schema-validation-failed', remove_label_name: 'json-schema-validation-passed'})
+              await swap_labels({github, context, add_label_name: 'json-schema-validation-failed', remove_label_name: 'json-schema-validation-passed'})
             } else {
-              await script({github, context, add_label_name: 'json-schema-validation-passed', remove_label_name: 'json-schema-validation-failed'})
+              await swap_labels({github, context, add_label_name: 'json-schema-validation-passed', remove_label_name: 'json-schema-validation-failed'})
             }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -124,7 +97,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-  pull-request-approver:
+  firewall-rules-pull-request-approver:
     runs-on: ubuntu-latest
     needs: [
         # firewall-rules-lint,
@@ -132,5 +105,56 @@ jobs:
         firewall-rules-opa-check,
       ]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Manual Approval Required
+        id: manual-approval-required
+        if: ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors }} || ${{ needs.firewall-rules-opa-check.outputs.opaValidationErrors }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
+            await swap_labels({github, context, add_label_name: 'manual-approval-required', remove_label_name: 'auto-approved'})
+
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const workflowApproval = reviews.find(review => 
+              review.user.type === 'Bot' && 
+              review.state === 'APPROVED' &&
+              review.user.login.includes('[bot]')
+            );
+
+            if (workflowApproval) {
+              console.log('Found previous workflow approval. Dismissing...');
+              await github.rest.pulls.dismissReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                review_id: workflowApproval.id,
+                message: 'Dismissing previous approval due to new changes or workflow re-run.'
+              });
+            } else {
+              console.log('No previous workflow approval found.');
+            }
+
+      - name: Auto Approve Pull Request
+        id: auto-approve-pull-request
+        if: ${{ !needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors }} && ${{ !needs.firewall-rules-opa-check.outputs.opaValidationErrors }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
+
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: issue_number,
+              event: 'APPROVE'
+            });
+
+            await swap_labels({github, context, add_label_name: 'auto-approved', remove_label_name: 'manual-approval-required'})
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

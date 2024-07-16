@@ -13,11 +13,13 @@ module.exports = async ({
     commentBody += "#### Schema Validation Errors:\n";
     jsonSchemaValidationErrors.forEach((error) => {
       commentBody += `- **File**: ${error.filename}\n`;
-      error.errors.forEach((err) => {
-        commentBody += `  - **Message**: ${err.message}\n`;
-        commentBody += `  - **Data**: ${err.data}\n`;
+      error.errors.forEach((err, index) => {
         commentBody += `  - **Path**: ${err.instancePath}\n`;
-        commentBody += `  - **Schema**: ${JSON.stringify(err.schema)}\n`;
+        commentBody += `    - **Message**: ${err.message}\n`;
+        commentBody += `    - **Data**: ${err.data}\n`;
+        if (err.schema) {
+          commentBody += `    - **Schema**: ${JSON.stringify(err.schema)}\n`;
+        }
       });
     });
   }
