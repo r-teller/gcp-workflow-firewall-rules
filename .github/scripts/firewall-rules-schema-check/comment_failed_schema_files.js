@@ -15,7 +15,7 @@ module.exports = async ({
       commentBody += `- **File**: ${error.filename}\n`;
       error.errors.forEach((err) => {
         console.log(err.message);
-        commentBody += `  - **Error**: ${err.message}\n`;
+        commentBody += `  - **Error**: ${JSON.stringify(err.message)}\n`;
       });
     });
   }
