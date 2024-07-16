@@ -44,13 +44,16 @@ module.exports = async ({ github, context, core, changedFiles }) => {
       };
 
       if (filteredErrors.errors.length > 0) {
+        console.log(filteredErrors);
         jsonSchemaValidationErrors.push(filteredErrors);
       }
     }
   }
 
-
-  core.setOutput("jsonSchemaValidationErrors", JSON.stringify(jsonSchemaValidationErrors));
+  core.setOutput(
+    "jsonSchemaValidationErrors",
+    JSON.stringify(jsonSchemaValidationErrors)
+  );
   core.setOutput("jsonLintErrors", JSON.stringify(jsonLintErrors));
   core.setOutput("badFiles", JSON.stringify(badFiles));
 };

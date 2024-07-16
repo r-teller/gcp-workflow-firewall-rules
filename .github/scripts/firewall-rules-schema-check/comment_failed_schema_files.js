@@ -14,6 +14,7 @@ module.exports = async ({
     jsonSchemaValidationErrors.forEach((error) => {
       commentBody += `- **File**: ${error.filename}\n`;
       error.errors.forEach((err) => {
+        console.log(err.message);
         commentBody += `  - **Error**: ${err.message}\n`;
       });
     });
