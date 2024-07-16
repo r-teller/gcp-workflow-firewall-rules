@@ -81,7 +81,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const errors = JSON.parse('${{ steps.json_lint_and_schema_validation.outputs.jsonLintErrors }}');
+            const errors = ${{ steps.json_lint_and_schema_validation.outputs.jsonLintErrors }}
             if (errors.length > 0) {
               console.log("JSON Lint Errors found in the following files:");
               errors.forEach(error => {
