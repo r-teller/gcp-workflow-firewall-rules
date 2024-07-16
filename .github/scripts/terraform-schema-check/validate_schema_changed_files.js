@@ -5,16 +5,29 @@ module.exports = async ({ github, context, core, changedFiles }) => {
   const ajv = new Ajv({ allErrors: true, verbose: true });
   //   const changedFiles = JSON.parse(process.env.CHANGED_FILES);
 
-  const validationErrors = [];
+  const jsonSchemaValidationErrors = [];
+  const jsonLintErrors = [];
+  const badFiles = [];
 
   // Load the schema
-  const schemaPath =
+  const jsonSchemaPath =
     ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json";
-  const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
-  const validate = ajv.compile(schema);
+  const jsonSchema = JSON.parse(fs.readFileSync(jsonSchemaPath, "utf8"));
+  const validate = ajv.compile(jsonSchema);
 
   for (const file of changedFiles) {
-    const data = JSON.parse(fs.readFileSync(file, "utf8"));
+    const jsonString = fs.readFileSync(file, "utf8");
+    let data;
+    try {
+      data = JSON.parse(jsonString);
+    } catch (error) {
+      jsonLintErrors.push({
+        filename: file,
+        error: `Syntax error: ${error.message}`,
+      });
+      badFiles.push(file);
+      continue;
+    }
     const valid = validate(data);
 
     if (!valid) {
@@ -31,12 +44,12 @@ module.exports = async ({ github, context, core, changedFiles }) => {
       };
 
       if (filteredErrors.errors.length > 0) {
-        validationErrors.push(filteredErrors);
+        jsonSchemaValidationErrors.push(filteredErrors);
       }
     }
   }
 
-  core.setOutput("validation_errors", JSON.stringify(validationErrors));
-  console.log(JSON.stringify(validationErrors, null, 2));
-  return validationErrors;
+  core.setOutput("json_schema_validation_errors", JSON.stringify(jsonSchemaValidationErrors));
+  core.setOutput("json_lint_errors", JSON.stringify(jsonLintErrors));
+  core.setOutput("bad_files", JSON.stringify(badFiles));
 };
