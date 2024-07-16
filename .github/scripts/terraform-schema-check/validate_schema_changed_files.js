@@ -1,7 +1,5 @@
-const fs = require("fs");
-const Ajv = require("ajv");
-
 module.exports = async ({ github, context, core }) => {
+  const Ajv = require("ajv");
   const ajv = new Ajv({ allErrors: true, verbose: true });
   const changedFiles = JSON.parse(process.env.CHANGED_FILES);
   const validationErrors = [];
