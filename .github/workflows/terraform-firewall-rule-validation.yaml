@@ -71,14 +71,41 @@ jobs:
                 pathPrefixes.some((prefix) => filename.startsWith(prefix)) &&
                 allowedExtensions.some((ext) => filename.endsWith(ext))
             );
-            console.log("Changed files:", changedFiles);
             return { changedFiles: changedFiles };
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Schema Validation
+        id: schema_validation
+        run: |
+          echo '[]' > validation_errors.json
+          for file in ${{ steps.get_changed_files.outputs.changedFiles  }}; do
+            if [[ $file == rules/gcp-workflow-firewall-rules/*.json ]]; then
+              output=$(ajv validate -s ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json" -d "$file" --strict=false --verbose --errors=json 2>&1)
+              if [ $? -ne 0 ]; then
+                errors=$(echo "$output" | sed -E '1s/^(.+) invalid$/{"filename":"\1","errors":/; $s/$/}/' | jq '
+                  {
+                    filename,
+                    errors: [
+                      .errors[] 
+                      | select(has("params") and (.params | type) == "object" and (.params | has("passingSchemas")))
+                      | del(.parentSchema, .schema)
+                    ]
+                  } | select(.errors != [])
+                ')
+                if [ ! -z "$errors" ]; then
+                  jq --argjson new "$errors" '. += [$new]' validation_errors.json > temp.json && mv temp.json validation_errors.json
+                fi
+              fi
+            fi
+          done
+          echo "validation_errors=$(cat validation_errors.json | jq -c .)" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+
       - name: Log changed files
         run: |
-          echo "Changed files: ${{ steps.get_changed_files.outputs.result }}"
+          echo "Changed files: ${{ steps.schema_validation.outputs.validation_errors }}"
 
       # - name: Schema Validation
       #   id: schema-validation
