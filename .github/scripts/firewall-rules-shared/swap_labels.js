@@ -9,9 +9,9 @@
  * @param {string} [remove_label_name] - The label to be removed (optional).
  */
 module.exports = async function swapLabels(github, context, add_label_name, remove_label_name = null) {
-    const issue_number = context.issue.number;
     const owner = context.repo.owner;
     const repo = context.repo.repo;
+    const issue_number = context.issue.number;
   
     // Get the list of labels assigned to the pull request
     const { data: labels } = await github.rest.issues.listLabelsOnIssue({
