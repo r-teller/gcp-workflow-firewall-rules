@@ -1,0 +1,151 @@
+name: Terraform Schema Check
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened]
+
+jobs:
+  terraform-schema-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Prerequisites
+        run: |
+          sudo npm install -g ajv-cli
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}" # Replace with the name of your GitHub Actions secret
+
+      - name: Get list of changed files
+        id: get_changed_files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const base = 'main';
+            const head = context.payload.pull_request.head.sha;
+
+            // Define the list of path prefixes you want to filter by
+            const pathPrefixes = [
+              // Add more prefixes as needed
+              "rules/gcp-workflow-firewall-rules/",
+            ];
+
+            // Define the list of file extensions you want to include
+            const allowedExtensions = [
+              // Add more extensions as needed
+              ".json",
+            ];
+
+            const { data: diff } = await github.rest.repos.compareCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              base,
+              head
+            });
+            const changedFiles = diff.files
+            .map((file) => file.filename)
+            .filter(
+              (filename) =>
+                pathPrefixes.some((prefix) => filename.startsWith(prefix)) &&
+                allowedExtensions.some((ext) => filename.endsWith(ext))
+            );
+            return { changedFiles: changedFiles };
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Schema Validation
+        id: schema_validation
+        run: |
+          echo '[]' > validation_errors.json
+          for file in ${{ steps.get_changed_files.outputs.changedFiles  }}; do
+            if [[ $file == rules/gcp-workflow-firewall-rules/*.json ]]; then
+              output=$(ajv validate -s ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json" -d "$file" --strict=false --verbose --errors=json 2>&1)
+              if [ $? -ne 0 ]; then
+                errors=$(echo "$output" | sed -E '1s/^(.+) invalid$/{"filename":"\1","errors":/; $s/$/}/' | jq '
+                  {
+                    filename,
+                    errors: [
+                      .errors[] 
+                      | select(has("params") and (.params | type) == "object" and (.params | has("passingSchemas")))
+                      | del(.parentSchema, .schema)
+                    ]
+                  } | select(.errors != [])
+                ')
+                if [ ! -z "$errors" ]; then
+                  jq --argjson new "$errors" '. += [$new]' validation_errors.json > temp.json && mv temp.json validation_errors.json
+                fi
+              fi
+            fi
+          done
+          echo "validation_errors=$(cat validation_errors.json | jq -c .)" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Log changed files
+        run: |
+          echo "Changed files: ${{ steps.schema_validation.outputs.validation_errors }}"
+
+      # - name: Schema Validation
+      #   id: schema-validation
+      #   run: |
+      #     ajv validate -s ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json"  -d "./rules/gcp-workflow-firewall-rules/*/*.json"
+      #   continue-on-error: true
+
+      # - name: Comment on PR if Schema Validation Fails
+      #   if: steps.schema-validation.outcome == 'failure'
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       const fs = require('fs');
+      #       const issue_number = context.issue.number;
+      #       const validationOutput = fs.readFileSync('schema_validation_output.json', { encoding: 'utf8' });
+      #       const validationErrors = JSON.parse(validationOutput);
+      #       const changedFiles = ${{ steps.get_changed_files.outputs.result }};
+
+      #       let errorFiles = new Set();
+      #       validationErrors.forEach(error => {
+      #         const filePathMatch = error.instancePath.match(/\/rules\/gcp-workflow-firewall-rules\/[^\/]+\/[^\/]+\.json/);
+      #         if (filePathMatch) {
+      #           const filePath = filePathMatch[0];
+      #           if (changedFiles.includes(filePath)) {
+      #             errorFiles.add(filePath);
+      #           }
+      #         }
+      #       });
+
+      #       if (errorFiles.size > 0) {
+      #         let commentBody = "### ❌ Schema Validation Errors\n\n";
+      #         commentBody += "The following modified files have schema validation errors:\n";
+      #         errorFiles.forEach((filePath, index) => {
+      #           commentBody += `- **File ${index + 1}**: ${filePath}\n`;
+      #         });
+
+      #         await github.rest.issues.createComment({
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           issue_number: issue_number,
+      #           body: commentBody
+      #         });
+      #       }
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Label PR for manual review
+      #   id: label-pr-for-manual-review
+      #   if: steps.check_results.outputs.approve == 'false' ||  steps.check_files_changed.outputs.approve == 'false'
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       const issue_number = context.issue.number;
+
+      #       // Add a label to indicate that manual review is required
+      #       await github.rest.issues.addLabels({
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         issue_number: issue_number,
+      #         labels: ['manual-review-required']
+      #       });
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
