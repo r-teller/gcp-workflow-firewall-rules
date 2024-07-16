@@ -152,13 +152,13 @@ jobs:
 
       - name: Auto Approve Pull Request
         id: auto-approve-pull-request
-        if: ${{ fromJson(needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors).length > 0 }} && ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}
+        if: ${{ (needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors).length > 0 }} && ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}
         uses: actions/github-script@v7
         with:
           script: |
             const issue_number = context.issue.number;
             const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
-            console.log('jsonSchemaValidationErrors = ${{ fromJson(needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors).length > 0 }}');
+            console.log('jsonSchemaValidationErrors = ${{ (needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors).length > 0 }}');
             console.log('opaValidationErrors = ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}');
             await github.rest.pulls.createReview({
               owner: context.repo.owner,
