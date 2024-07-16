@@ -1,0 +1,5 @@
+## Equivalent of the above mentioned configuration using another syntax
+Firewall-Rule:
+- any
+  - changed-files:
+  - any-glob-to-any-file: 'rules/*.json'

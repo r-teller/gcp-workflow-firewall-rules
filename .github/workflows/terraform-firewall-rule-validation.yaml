@@ -1,0 +1,30 @@
+name: Terraform OPA Check
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened]
+
+# Use a concurrency group to ensure serialized execution
+concurrency:
+  group: terraform-plan-or-apply
+  cancel-in-progress: false
+
+jobs:
+  pull-request-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label Schema Check
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yaml
+  terraform-schema-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+  terraform-opa-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
