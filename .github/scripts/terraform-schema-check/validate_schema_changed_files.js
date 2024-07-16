@@ -1,3 +1,4 @@
+const fs = require("fs");
 const Ajv = require("ajv");
 
 module.exports = async ({ github, context, core, changedFiles }) => {
