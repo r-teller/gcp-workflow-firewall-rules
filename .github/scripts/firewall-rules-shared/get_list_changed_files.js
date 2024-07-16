@@ -29,7 +29,7 @@ module.exports = async ({ github, context, core }) => {
       );
     console.log(changedFiles);
     core.setOutput("changedFiles", changedFiles);
-    return changedFiles;
+    // return changedFiles;
   } catch (error) {
     core.setFailed(`Error getting changed files: ${error.message}`);
   }

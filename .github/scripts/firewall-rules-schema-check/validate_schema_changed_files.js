@@ -49,7 +49,8 @@ module.exports = async ({ github, context, core, changedFiles }) => {
     }
   }
 
-  core.setOutput("json_schema_validation_errors", JSON.stringify(jsonSchemaValidationErrors));
-  core.setOutput("json_lint_errors", JSON.stringify(jsonLintErrors));
-  core.setOutput("bad_files", JSON.stringify(badFiles));
+
+  core.setOutput("jsonSchemaValidationErrors", JSON.stringify(jsonSchemaValidationErrors));
+  core.setOutput("jsonLintErrors", JSON.stringify(jsonLintErrors));
+  core.setOutput("badFiles", JSON.stringify(badFiles));
 };

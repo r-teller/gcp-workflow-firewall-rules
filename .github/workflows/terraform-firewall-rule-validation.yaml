@@ -59,11 +59,11 @@ jobs:
         run: terraform init -backend=false
 
       - name: Get list of changed files
-        id: check_files_changed
+        id: get_list_changed_files
         uses: actions/github-script@v7
         with:
           script: |
-            const script = require('./.github/scripts/terraform-schema-check/get_list_changed_files.js')
+            const script = require('./.github/scripts/firewall-rules-shared/get_list_changed_files.js')
             return await script({github, context, core})
 
       - name: JSON Lint & Schema Validation
@@ -71,8 +71,8 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const script = require('./.github/scripts/terraform-schema-check/validate_schema_changed_files.js')
-            const changedFiles = ${{ steps.check_files_changed.outputs.changedFiles }}
+            const script = require('./.github/scripts/firewall-rules-schema-check/validate_schema_changed_files.js')
+            const changedFiles = ${{ steps.get_list_changed_files.outputs.changedFiles }}
             return await script({github, context, core, changedFiles})
         continue-on-error: true
 
