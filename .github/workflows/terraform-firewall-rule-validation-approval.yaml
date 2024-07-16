@@ -1,4 +1,4 @@
-name: Terraform Schema Check
+name: Terraform Label and Approve
 
 on:
   pull_request:
