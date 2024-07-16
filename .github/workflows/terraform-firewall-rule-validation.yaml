@@ -94,31 +94,33 @@ jobs:
         id: set_json_schema_label
         uses: actions/github-script@v7
         with:
-          script: |
+          script: |        
+            const payload = context.payload.pull_reques
+
             if(${{ steps.json_lint_and_schema_validation.outputs.jsonSchemaValidationErrors }}) {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: context.payload.pull_request.number,
+                pull_number: payload.number,
                 labels: ['json-schema-validation-failed']
               });
               await github.rest.issues.removeLabel({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: context.payload.pull_request.number,
+                pull_number: payload.number,
                 name: 'json-schema-validation-failed'
               });
             } else {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: context.payload.pull_request.number,
+                pull_number: payload.number,
                 labels: ['json-schema-validation-passed']
               });
               await github.rest.issues.removeLabel({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: context.payload.pull_request.number,
+                pull_number: payload.number,
                 name: 'json-schema-validation-failed'
               });
             }
