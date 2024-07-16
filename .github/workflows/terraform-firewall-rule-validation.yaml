@@ -64,7 +64,7 @@ jobs:
         with:
           script: |
             const script = require('./.github/scripts/firewall-rules-shared/get_list_changed_files.js')
-            return await script({github, context, core})
+            await script({github, context, core})
 
       - name: JSON Lint & Schema Validation
         id: json_lint_and_schema_validation
@@ -73,7 +73,7 @@ jobs:
           script: |
             const script = require('./.github/scripts/firewall-rules-schema-check/validate_schema_changed_files.js')
             const changedFiles = ${{steps.get_list_changed_files.outputs.changedFiles }}
-            return await script({github, context, core, changedFiles})
+            await script({github, context, core, changedFiles})
         continue-on-error: true
 
       - name: Check for JSON Lint Errors
