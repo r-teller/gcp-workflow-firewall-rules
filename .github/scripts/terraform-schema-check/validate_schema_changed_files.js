@@ -1,8 +1,9 @@
 const Ajv = require("ajv");
 
-module.exports = async ({ github, context, core }) => {
+module.exports = async ({ github, context, core, changedFiles }) => {
   const ajv = new Ajv({ allErrors: true, verbose: true });
-  const changedFiles = JSON.parse(process.env.CHANGED_FILES);
+  //   const changedFiles = JSON.parse(process.env.CHANGED_FILES);
+
   const validationErrors = [];
 
   // Load the schema

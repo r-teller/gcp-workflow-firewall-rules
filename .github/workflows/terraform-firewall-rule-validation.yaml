@@ -45,7 +45,8 @@ jobs:
         with:
           script: |
             const script = require('./.github/scripts/terraform-schema-check/validate_schema_changed_files.js')
-            return await script({github, context, core})
+            const changedFiles = ${{ steps.check_files_changed.outputs.changedFiles }}
+            return await script({github, context, core, changedFiles})
         continue-on-error: true
 
   terraform-opa-check:
