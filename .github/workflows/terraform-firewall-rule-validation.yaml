@@ -24,16 +24,8 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const payload = context.payload.pull_request
-            const response = await github.rest.pulls.listFiles({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: payload.number
-            });
-
-            const changedFiles = response.data.map(file => file.filename).filter((file) => file.endsWith('.json') && file.startsWith('rules/'));
-            console.log(changedFiles);
-            core.setOutput('changedFiles', changedFiles);
+            const script = require('./.github/scripts/terraform-schema-check/get_list_changed_files.js')
+            return await script({github, context, core})
 
   terraform-opa-check:
     runs-on: ubuntu-latest
