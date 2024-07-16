@@ -8,7 +8,7 @@
  * @param {string} add_label_name - The label to be added.
  * @param {string} [remove_label_name] - The label to be removed (optional).
  */
-async function swapLabels(github, context, add_label_name, remove_label_name = null) {
+module.exports = async function swapLabels(github, context, add_label_name, remove_label_name = null) {
     const issue_number = context.issue.number;
     const owner = context.repo.owner;
     const repo = context.repo.repo;
