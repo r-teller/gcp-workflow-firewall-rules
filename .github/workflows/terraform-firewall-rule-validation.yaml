@@ -90,6 +90,41 @@ jobs:
               core.setFailed("JSON Lint Errors found");
             }
 
+      - name: Set JSON Schema Label
+        id: set_json_schema_label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if(${{ steps.json_lint_and_schema_validation.outputs.jsonSchemaValidationErrors }}) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                labels: ['json-schema-validation-failed']
+              });
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                name: 'json-schema-validation-failed'
+              });
+            } else {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                labels: ['json-schema-validation-passed']
+              });
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                name: 'json-schema-validation-failed'
+              });
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   firewall-rules-opa-check:
     needs: [firewall-rules-schema-check]
     runs-on: ubuntu-latest
