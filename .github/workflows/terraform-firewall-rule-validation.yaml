@@ -10,19 +10,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  pull-request-label:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Label Schema Check
-        uses: actions/labeler@v5
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          configuration-path: .github/labeler.yaml
   terraform-schema-check:
     runs-on: ubuntu-latest
     steps:
+      - name: Install Prerequisites
+        run: |
+          sudo npm install -g ajv-cli
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Get list of changed files
+        id: check_files_changed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const payload = context.payload.pull_request
+            const response = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: payload.number
+            });
+
+            const changedFiles = response.data.map(file => file.filename).filter((file) => file.endsWith('.json') && file.startsWith('rules/'));
+            console.log(changedFiles);
+            core.setOutput('changedFiles', changedFiles);
+
   terraform-opa-check:
     runs-on: ubuntu-latest
     steps:
