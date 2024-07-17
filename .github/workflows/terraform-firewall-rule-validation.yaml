@@ -123,9 +123,7 @@ jobs:
 
       - name: Manual Approval Required
         id: manual-approval-required
-        if:
-          ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors != '[]' }} ||
-          ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected != 'false' }}
+        if: ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors != '[]' || needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == 'true' }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -135,9 +133,7 @@ jobs:
 
       - name: Auto Approve Pull Request
         id: auto-approve-pull-request
-        if:
-          ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors == '[]' }} &&
-          ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}
+        if: ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors == '[]' && needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}
         uses: actions/github-script@v7
         with:
           script: |
