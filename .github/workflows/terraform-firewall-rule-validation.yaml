@@ -127,7 +127,8 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            console.log("Testing this")
+            const lifecycle_labels = require('./.github/scripts/firewall-rules-shared/lifecycle_labels.js')
+            await lifecycle_labels({github, context, remove_label_name: 'auto-approved'})
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
