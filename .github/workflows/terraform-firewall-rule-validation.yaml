@@ -169,7 +169,7 @@ jobs:
             await github.rest.pulls.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: ontext.issue.number,
+              pull_number: context.issue.number,
               event: 'APPROVE'
             });
 
