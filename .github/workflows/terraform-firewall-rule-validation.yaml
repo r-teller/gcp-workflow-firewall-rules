@@ -129,10 +129,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
-            await swap_labels({github, context, add_label_name: 'manual-approval-required', remove_label_name: 'auto-approved'})
-            # const lifecycle_labels = require('./.github/scripts/firewall-rules-shared/lifecycle_labels.js')
-            # await lifecycle_labels({github, context, add_label_name: 'manual-approval-required', remove_label_name: 'auto-approved'})
+            console.log("Testing this")
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
