@@ -154,6 +154,8 @@ jobs:
             } else {
               console.log('No previous workflow approval found.');
             }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Auto Approve Pull Request
         id: auto-approve-pull-request
