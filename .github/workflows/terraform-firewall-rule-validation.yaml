@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  firewall-rules-init:
+  firewall-rules-validation-init:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -51,8 +51,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  firewall-rules-schema-check:
+  firewall-rules-validation-schema-check:
     runs-on: ubuntu-latest
+    needs: [firewall-rules-validation-init]
     outputs:
       jsonSchemaValidationErrors: ${{ steps.json_lint_and_schema_validation.outputs.jsonSchemaValidationErrors }}
       jsonLintErrors: ${{ steps.json_lint_and_schema_validation.outputs.jsonLintErrors }}
@@ -134,8 +135,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  firewall-rules-opa-check:
-    needs: [firewall-rules-schema-check]
+  firewall-rules-validation-opa-check:
+    needs: [firewall-rules-validation-schema-check]
     runs-on: ubuntu-latest
     outputs:
       criticalOpaViolationsDetected: ${{ steps.opa_output_validation.outputs.criticalOpaViolationsDetected }}
@@ -151,20 +152,18 @@ jobs:
             const script = require('./.github/scripts/firewall-rules-opa-check/validate_terraform_plan.js')
             await script({github, context, core})
 
-  firewall-rules-pull-request-approver:
+  firewall-rules-validation-pull-request-approver:
     runs-on: ubuntu-latest
-    needs: [
-        # firewall-rules-lint,
-        firewall-rules-schema-check,
-        firewall-rules-opa-check,
-      ]
+    needs:
+      - firewall-rules-validation-schema-check
+      - firewall-rules-validation-opa-check
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Manual Approval Required
         id: manual-approval-required
-        if: ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors != '[]' || needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == 'true' }}
+        if: ${{ needs.firewall-rules-validation-schema-check.outputs.jsonSchemaValidationErrors != '[]' || needs.firewall-rules-validation-opa-check.outputs.criticalOpaViolationsDetected == 'true' }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -175,7 +174,7 @@ jobs:
 
       - name: Auto Approve Pull Request
         id: auto-approve-pull-request
-        if: ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors == '[]' && needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}
+        if: ${{ needs.firewall-rules-validation-schema-check.outputs.jsonSchemaValidationErrors == '[]' && needs.firewall-rules-validation-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}
         uses: actions/github-script@v7
         with:
           script: |
