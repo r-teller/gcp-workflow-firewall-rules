@@ -123,43 +123,24 @@ jobs:
 
       - name: Manual Approval Required
         id: manual-approval-required
-        if: ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors != '[]' }} || ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected != 'false' }}
+        if:
+          ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors != '[]' }} ||
+          ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected != 'false' }}
         uses: actions/github-script@v7
         with:
           script: |
-            const lifecycle_labels = require('./.github/scripts/firewall-rules-shared/lifecycle_labels.js')
-            await lifecycle_labels({github, context, add_label_name: 'manual-approval-required', remove_label_name: 'auto-approved'})
-
-            # const { data: reviews } = await github.rest.pulls.listReviews({
-            #   owner: context.repo.owner,
-            #   repo: context.repo.repo,
-            #   pull_number: context.issue.number
-            # });
-
-            # const workflowApproval = reviews.find(review => 
-            #   review.user.type === 'Bot' && 
-            #   review.state === 'APPROVED' &&
-            #   review.user.login.includes('[bot]')
-            # );
-
-            # if (workflowApproval) {
-            #   console.log('Found previous workflow approval. Dismissing...');
-            #   # await github.rest.pulls.dismissReview({
-            #   #   owner: context.repo.owner,
-            #   #   repo: context.repo.repo,
-            #   #   pull_number: context.issue.number,
-            #   #   review_id: workflowApproval.id,
-            #   #   message: 'Dismissing previous approval due to new changes or workflow re-run.'
-            #   # });
-            # } else {
-            #   console.log('No previous workflow approval found.');
-            # }
+            const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
+            await swap_labels({github, context, add_label_name: 'manual-approval-required', remove_label_name: 'auto-approved'})
+            # const lifecycle_labels = require('./.github/scripts/firewall-rules-shared/lifecycle_labels.js')
+            # await lifecycle_labels({github, context, add_label_name: 'manual-approval-required', remove_label_name: 'auto-approved'})
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Auto Approve Pull Request
         id: auto-approve-pull-request
-        if: ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors == '[]' }} && ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}
+        if:
+          ${{ needs.firewall-rules-schema-check.outputs.jsonSchemaValidationErrors == '[]' }} &&
+          ${{ needs.firewall-rules-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}
         uses: actions/github-script@v7
         with:
           script: |
