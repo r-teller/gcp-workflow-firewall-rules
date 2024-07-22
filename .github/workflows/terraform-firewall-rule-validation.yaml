@@ -118,7 +118,7 @@ jobs:
           script: |
             const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
 
-            if(${{ steps.json_lint_and_schema_validation.outputs.jsonSchemaValidationErrors }}) {
+            if(${{ steps.json_lint_and_schema_validation.outputs.jsonSchemaValidationErrors  != '[]'  }}) {
               await swap_labels({github, context, add_label_name: 'json-schema-validation-failed', remove_label_name: 'json-schema-validation-passed'})
             } else {
               await swap_labels({github, context, add_label_name: 'json-schema-validation-passed', remove_label_name: 'json-schema-validation-failed'})
@@ -188,6 +188,20 @@ jobs:
             const script = require('./.github/scripts/firewall-rules-opa-check/validate_terraform_plan_opa_violations.js')
             await script({github, context, core})
         continue-on-error: true
+
+      - name: Set OPA Violations Label
+        id: set_opa_violations_label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
+            if(${{ steps.validate_terraform_plan_opa_violations.outputs.criticalOpaViolationsDetected == 'true' }}) {
+              await swap_labels({github, context, add_label_name: 'opa-violations-detected', remove_label_name: 'opa-violations-passed'})
+            } else {
+              await swap_labels({github, context, add_label_name: 'opa-violations-passed', remove_label_name: 'opa-violations-detected'})
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Comment on Pull Request
         id: comment_on_pull_request

@@ -1,17 +1,3 @@
-// const fs = require("fs");
-// const crypto = require("crypto");
-
-// const github = {
-//   run_id: "1234567890",
-//   run_attempt: "1",
-// };
-
-// const context = {
-//   issue: {
-//     number: 1,
-//   },
-// };
-// const opaViolations = JSON.parse(fs.readFileSync("./result.failures_grouped.json", { encoding: "utf8" }));
 module.exports = async ({ github, context, core, opaViolations }) => {
   const commentId = `${context.issue.number}-${github.run_id}-${github.run_attempt}`;
 
@@ -50,7 +36,7 @@ module.exports = async ({ github, context, core, opaViolations }) => {
       severityIndicator = "⚠️"; // Yellow caution sign for totalRuleRating > 1 & < 999
     }
 
-    tableRows.push(`| [${violationIndex}](#${violationIndex}--${commentId}) | ${action} | ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${totalCount} | ${severityIndicator} |`);
+    tableRows.push(`| ${violationIndex} | ${action} | ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${totalCount} | ${severityIndicator} |`);
 
     let details =
       `**Action**: ${action}<br>` +
@@ -78,8 +64,7 @@ module.exports = async ({ github, context, core, opaViolations }) => {
         })
         .join("<br>");
 
-    detailedMessages += `| <div id="${violationIndex}--${commentId}">${violationIndex}</div> | ${details} |\n`;
-    // console.log(index);
+    detailedMessages += `| ${violationIndex} | ${details} |\n`;
     index++;
   }
 
@@ -92,7 +77,7 @@ module.exports = async ({ github, context, core, opaViolations }) => {
   }
 
   const commentBody = `### ${commentIcon} -- Pull Request Risk Matrix\n\n${tableHeader}${tableSeparator}${tableRows.join("\n")}\n\n${detailedMessages}`;
-  // console.log(commentBody);
+
   await github.rest.issues.createComment({
     owner: context.repo.owner,
     repo: context.repo.repo,
