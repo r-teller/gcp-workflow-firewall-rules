@@ -13,7 +13,7 @@ jobs:
   firewall-rules-validation-init:
     runs-on: ubuntu-latest
     outputs:
-      changedFiles: ${{ steps.get_list_changed_files.outputs.changedFiles }}
+      changedFiles: ${{ steps.get_list_of_approved_changes.outputs.changedFiles }}
       nonApprovedChanges: ${{ steps.get_list_of_approved_changes.outputs.nonApprovedChanges }}
     steps:
       - name: Checkout code
