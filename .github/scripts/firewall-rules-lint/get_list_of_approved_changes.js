@@ -1,6 +1,8 @@
 module.exports = async ({ github, context, core }) => {
+  let nonApprovedChanges = false;
+
   // Define the list of path prefixes you want to filter by
-  const pathPrefixes = [
+  const allowedPathPrefixes = [
     // Add more prefixes as needed
     "rules/",
   ];
@@ -20,16 +22,19 @@ module.exports = async ({ github, context, core }) => {
       pull_number: payload.number,
     });
 
-    const changedFiles = diff
-      .map((file) => file.filename)
-      .filter(
-        (file) =>
-          allowedExtensions.some((ext) => file.endsWith(ext)) &&
-          pathPrefixes.some((prefix) => file.startsWith(prefix))
-      );
-    console.log(changedFiles);
+    const changedFiles = diff.map((file) => file.filename).filter((file) => allowedExtensions.some((ext) => file.endsWith(ext)) && allowedPathPrefixes.some((prefix) => file.startsWith(prefix)));
+
+    // Determine additional files not included in changedFiles
+    const additionalFiles = diff.map((file) => file.filename).filter((file) => !changedFiles.includes(file));
+
+    if (additionalFiles.length > 0) {
+      nonApprovedChanges = true;
+    }
+
+    // console.log(changedFiles);
+    core.setOutput("nonApprovedChanges", nonApprovedChanges);
     core.setOutput("changedFiles", changedFiles);
-    return changedFiles;
+    // return changedFiles;
   } catch (error) {
     core.setFailed(`Error getting changed files: ${error.message}`);
   }

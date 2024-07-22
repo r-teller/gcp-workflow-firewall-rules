@@ -20,13 +20,7 @@ module.exports = async ({ github, context, core }) => {
       pull_number: payload.number,
     });
 
-    const changedFiles = diff
-      .map((file) => file.filename)
-      .filter(
-        (file) =>
-          allowedExtensions.some((ext) => file.endsWith(ext)) &&
-          pathPrefixes.some((prefix) => file.startsWith(prefix))
-      );
+    const changedFiles = diff.map((file) => file.filename).filter((file) => allowedExtensions.some((ext) => file.endsWith(ext)) && pathPrefixes.some((prefix) => file.startsWith(prefix)));
     console.log(changedFiles);
     core.setOutput("changedFiles", changedFiles);
     // return changedFiles;

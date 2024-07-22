@@ -1,11 +1,4 @@
-module.exports = async ({
-  github,
-  context,
-  core,
-  jsonSchemaValidationErrors,
-}) => {
-  //   const jsonSchemaValidationErrors = JSON.parse(core.getInput("jsonSchemaValidationErrors"));
-
+module.exports = async ({ github, context, core, jsonSchemaValidationErrors }) => {
   let commentBody = "### 🔴 Schema Validation Failed\n\n";
   commentBody += "The following files failed schema validation:\n\n";
 

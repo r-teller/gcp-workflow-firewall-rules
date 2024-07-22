@@ -7,7 +7,7 @@
     "direction": "INGRESS",
     "log_config": "INCLUDE_ALL_METADATA",
     "priority": 1000,
-    "sources": ["35.235.240.0/20"],
+    "sources": [],
     "targets": [],
     "rules": [{ "protocol": "TCP", "ports": ["443", "8443", "9090"] }]
   }

@@ -9,12 +9,7 @@
  * @param {string} [remove_label_name] - The label to be removed (optional).
  */
 
-module.exports = async ({
-  github,
-  context,
-  add_label_name = null,
-  remove_label_name = null,
-}) => {
+module.exports = async ({ github, context, add_label_name = null, remove_label_name = null }) => {
   const owner = context.repo.owner;
   const repo = context.repo.repo;
   const issue_number = context.issue.number;

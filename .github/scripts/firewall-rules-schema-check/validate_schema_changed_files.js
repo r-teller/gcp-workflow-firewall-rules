@@ -10,8 +10,7 @@ module.exports = async ({ github, context, core, changedFiles }) => {
   const badFiles = [];
 
   // Load the schema
-  const jsonSchemaPath =
-    ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json";
+  const jsonSchemaPath = ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json";
   const jsonSchema = JSON.parse(fs.readFileSync(jsonSchemaPath, "utf8"));
   const validate = ajv.compile(jsonSchema);
 
@@ -33,14 +32,7 @@ module.exports = async ({ github, context, core, changedFiles }) => {
     if (!valid) {
       const filteredErrors = {
         filename: file,
-        errors: validate.errors
-          .filter(
-            (e) =>
-              e.params &&
-              typeof e.params === "object" &&
-              "passingSchemas" in e.params
-          )
-          .map(({ parentSchema, ...rest }) => rest),
+        errors: validate.errors.filter((e) => e.params && typeof e.params === "object" && "passingSchemas" in e.params).map(({ parentSchema, ...rest }) => rest),
       };
 
       if (filteredErrors.errors.length > 0) {
@@ -50,10 +42,7 @@ module.exports = async ({ github, context, core, changedFiles }) => {
     }
   }
 
-  core.setOutput(
-    "jsonSchemaValidationErrors",
-    JSON.stringify(jsonSchemaValidationErrors)
-  );
+  core.setOutput("jsonSchemaValidationErrors", JSON.stringify(jsonSchemaValidationErrors));
   core.setOutput("jsonLintErrors", JSON.stringify(jsonLintErrors));
   core.setOutput("badFiles", JSON.stringify(badFiles));
 };
