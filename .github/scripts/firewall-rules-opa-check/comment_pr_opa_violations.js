@@ -11,9 +11,10 @@
 //     number: 1,
 //   },
 // };
-// const commentId = `${context.issue.number}-${github.run_id}-${github.run_attempt}`;
 // const opaViolations = JSON.parse(fs.readFileSync("./result.failures_grouped.json", { encoding: "utf8" }));
 module.exports = async ({ github, context, core, opaViolations }) => {
+  const commentId = `${context.issue.number}-${github.run_id}-${github.run_attempt}`;
+
   let detailedMessages = "#### Detailed Messages:\n\n" + "| # | Details |\n" + "|---|---------|\n";
 
   const tableHeader = "| # | Action |  Rule Name | Rule Action | Rule Rating | Violation Count | Severity Indicator |\n";
