@@ -178,6 +178,7 @@ jobs:
                 -v "$(pwd)":/project \
                 openpolicyagent/conftest \
                 test --all-namespaces ./tfplan.json --output json > ./result.json
+        continue-on-error: true
 
       - name: Validate Terraform Plan for OPA Violations
         id: validate_terraform_plan_opa_violations
