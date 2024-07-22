@@ -1,0 +1,355 @@
+name: Terraform OPA Check
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened]
+
+# Use a concurrency group to ensure serialized execution
+concurrency:
+  group: terraform-plan-or-apply
+  cancel-in-progress: false
+
+jobs:
+  terraform-opa-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+          terraform_version: 1.6.6
+
+      - uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}" # Replace with the name of your GitHub Actions secret
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Get list of changed files
+        id: get_changed_files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const base = 'main';
+            const head = context.payload.pull_request.head.sha;
+
+            // Define the list of path prefixes you want to filter by
+            const pathPrefixes = [
+              // Add more prefixes as needed
+              "rules/gcp-workflow-firewall-rules/",
+            ];
+
+            // Define the list of file extensions you want to include
+            const allowedExtensions = [
+              // Add more extensions as needed
+              ".json",
+            ];
+
+            const { data: diff } = await github.rest.repos.compareCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              base,
+              head
+            });
+            const changedFiles = diff.files
+            .map((file) => file.filename)
+            .filter(
+              (filename) =>
+                pathPrefixes.some((prefix) => filename.startsWith(prefix)) &&
+                allowedExtensions.some((ext) => filename.endsWith(ext))
+            );
+            return { changedFiles: changedFiles };
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -out=tfplan -var generate_firewall_rules_map_json=true
+          terraform show -json ./tfplan > ./tfplan.json
+
+      - name: Pull Docker image
+        id: PullDockerImage
+        run: |
+          docker pull "openpolicyagent/conftest:latest"
+
+      - name: Run Conftest
+        run: |
+          docker run \
+                --rm \
+                -v "$(pwd)":/project \
+                openpolicyagent/conftest \
+                test --all-namespaces ./tfplan.json --output json > ./result.json
+        continue-on-error: true
+
+      - name: Check for non-low severity issues
+        id: check_results
+        run: |
+          # First Command: This command processes the JSON data and outputs an intermediate result that formats the data into the desired structure for each violation. 
+          jq '[.[] | 
+            . as $root | 
+            ($root.warnings // [] + $root.failures // [])[] | 
+            {
+              ruleKey: .metadata.ruleKey, 
+              ruleRating: .metadata.ruleRating, 
+              msg: .msg, 
+              action: .metadata.action,
+              namespace: $root.namespace, 
+              severity: .metadata.severity, 
+              ruleAction: .metadata.ruleAction, 
+              network: .metadata.network, 
+              project: .metadata.project, 
+              ruleName: .metadata.ruleName, 
+              direction: .metadata.ruleDirection, 
+              rulePriority: .metadata.rulePriority
+            }
+          ]' ./result.json > ./result.failures_list.json
+
+          # Extracts the content of the 'firewall_rules_map' resource from the Terraform plan JSON output.
+          # This command filters the 'resource_changes' array to find an object where the 'name' matches 'firewall_rules_map'.
+          # It then extracts the 'content' field from the 'after' state of the change, parses it as JSON,
+          # and writes the result to '.staging.firewall_rules_map.json'.
+          jq -r '
+            .resource_changes[] |
+            select(.name == "firewall_rules_map") |
+            .change.after.content |
+            fromjson
+          ' ./tfplan.json > ./result.firewall_rules_map.json
+
+          # Second Command: This command takes the output of the first command and then 
+          # - groups the data by ruleKey
+          # - calculates the totalRuleRating 
+          # - inserts violation_overview for each rule
+          # - sorts the rules by totalRuleRating from high to low.
+          jq --slurpfile rulesMap result.firewall_rules_map.json '
+          group_by(.ruleKey) | 
+          map({
+            (.[0].ruleKey): {
+              totalRuleRating: map(.ruleRating) | add, 
+              totalCount: length, 
+              ruleAction: .[0].ruleAction,
+              fileName: ($rulesMap[0][.[0].ruleKey].file_name),
+              ruleIndex: ($rulesMap[0][.[0].ruleKey].rule_index),
+              ruleId: ($rulesMap[0][.[0].ruleKey].id),
+              environemnt: ($rulesMap[0][.[0].ruleKey].environemnt),
+              prefix: ($rulesMap[0][.[0].ruleKey].prefix),
+              action: .[0].action, 
+              network: .[0].network, 
+              project: .[0].project, 
+              ruleName: .[0].ruleName, 
+              direction: .[0].direction, 
+              rulePriority: .[0].rulePriority, 
+              violationOverview: (map({
+                message: .msg, 
+                namespace: .namespace, 
+                severity: .severity, 
+                ruleRating: .ruleRating
+              }) | sort_by(.ruleRating) | reverse)
+            }
+          }) | 
+          add | to_entries | sort_by(.value.totalRuleRating) | reverse |         
+          from_entries' ./result.failures_list.json > ./result.failures_grouped.json
+
+          nonLowFailureCount=$(jq '[.[] | select(.totalRuleRating != 1)] | length' ./result.failures_grouped.json)
+          if [ "$nonLowFailureCount" -eq 0 ]; then
+            echo "No issues with severity higher than LOW found."
+            # echo "::set-output name=approve::true"
+            echo "approve=true" >> $GITHUB_ENV
+          else
+            echo "Issues with severity higher than LOW found."
+            # echo "::set-output name=approve::false"
+            echo "approve=false" >> $GITHUB_ENV
+          fi
+
+      - name: Get list of changed files
+        id: check_files_changed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const payload = context.payload.pull_request
+            const response = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: payload.number
+            });
+            const files = response.data.map(file => file.filename);
+
+            // Check if there are changes outside 'rules/' directory
+            const changesOutsideRules = files.some(file => !file.startsWith('rules/'));            
+
+            core.setOutput('approve', changesOutsideRules ? 'false' : 'true');
+
+      - name: Comment on PRs as a table
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const issue_number = context.issue.number;
+            const issuesJson = fs.readFileSync('./result.failures_grouped.json', {encoding: 'utf8'});
+            const issues = JSON.parse(issuesJson);
+
+            console.log('Parsed issues:', issues); // Add this line to print the parsed issues
+
+            let detailedMessages = "#### Detailed Messages:\n\n" + 
+            "| # | Details |\n" + 
+            "|---|---------|\n";
+
+            let tableHeader = '| # | Action |  Rule Name | Rule Action | Rule Rating | Violation Count | Severity Indicator |\n';
+            let tableSeparator = '| --- | --- | --- | --- | --- | --- | --- |\n';
+            let tableRows = [];
+            let index = 0;
+            for (const key in issues) {
+              const issue = issues[key];              
+              const action = issue?.action ?? 'N/A';
+              const ruleName = issue?.ruleName ?? 'N/A';
+              const ruleAction = issue?.ruleAction ?? 'N/A'; 
+              const ruleDirection = issue?.direction ?? 'N/A'; 
+              const rulePriority = issue?.rulePriority ?? 'N/A';
+              const voilationCount  = issue?.totalCount ?? 'N/A';
+              const totalRuleRating = issue.totalRuleRating;
+              const project = issue?.project ?? 'N/A';
+              const network = issue?.network ?? 'N/A';
+              const fileName = issue?.fileName ?? 'N/A';
+              const ruleIndex = issue?.ruleIndex ?? 'N/A';
+              const environment = issue?.environment ?? 'N/A';
+              const prefix = issue?.prefix ?? 'N/A';
+              const ruleId = issue?.ruleId ?? 'N/A';
+              const violationOverview = issue?.violationOverview ?? [];
+
+              let severityIndicator = '🔴'; // Default to red circle
+
+              if (totalRuleRating === 1) {
+                severityIndicator = '✅'; // Green check for totalRuleRating == 1
+              } else if (totalRuleRating > 1 && totalRuleRating < 999) {
+                severityIndicator = '⚠️'; // Yellow caution sign for totalRuleRating > 1 & < 999
+              }
+              tableRows.push(`| ${index + 1} |${action} |  ${ruleName} | ${ruleAction} | ${totalRuleRating} | ${voilationCount} | ${severityIndicator} |`);
+
+              let details = `**Action**: ${action}<br>` +
+                            `**Rule Name**: ${ruleName}<br>` +
+                            `**Rule Action**: ${ruleAction}<br>` +
+                            `**Rule Direction**: ${ruleDirection}<br>` +
+                            `**Rule Priority**: ${ruleName}<br>` +
+                            `**Rule ID**: ${ruleName}<br>` +
+                            `**Project**: ${project}<br>` +
+                            `**Network**: ${network}<br>` +
+                            `**File Name**: ${fileName}<br>` +
+                            `**Rule Index**: ${ruleIndex}<br>` +
+                            `**Environment**: ${environment}<br>` +
+                            `**Prefix**: ${prefix}<br>` +
+                            `**Violation Overview**:<br>` +
+                            violationOverview.map(violation => {
+                              return `<hr>` + // Add this line to insert a horizontal rule before each violation
+                                    `&bull; **Message**: ${violation.message ?? 'N/A'}<br>` +
+                                    `&bull; **Namespace**: ${violation.namespace ?? 'N/A'}<br>` +
+                                    `&bull; **Severity**: ${violation.severity ?? 'N/A'}<br>` +
+                                    `&bull; **Rule Rating**: ${violation.ruleRating ?? 'N/A'}`;
+                            }).join('<br>');
+
+              detailedMessages += `| ${index + 1} | ${details} |\n`;
+              
+              index++;
+            }                
+
+            // const commentBody = `### 🔴 Changes Require Manual Approval\n\n${tableHeader}${tableSeparator}${tableRows.join('\n')}\n\n${detailedMessages}`;
+
+            const highestTotalRuleRating = Math.max(...Object.values(issues).map(issue => issue.totalRuleRating));
+            let commentIcon = '🔴'; // Default to red circle
+            if (highestTotalRuleRating === 1) {
+              commentIcon = '✅'; // Green check for totalRuleRating == 1
+            } else if (highestTotalRuleRating > 1 && highestTotalRuleRating < 999) {
+              commentIcon = '⚠️'; // Yellow caution sign for totalRuleRating > 1 & < 999
+            }
+
+            const commentBody = `### ${commentIcon} -- Pull Request Risk Matrix\n\n${tableHeader}${tableSeparator}${tableRows.join('\n')}\n\n${detailedMessages}`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              body: commentBody
+            });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  
+      - name: Approve and Merge PR
+        id: auto-approve-and-merge-pr
+        if: steps.check_results.outputs.approve == 'true' && steps.check_files_changed.outputs.approve == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: issue_number,
+              event: 'APPROVE'
+            });
+
+            // Add a label to indicate the PR was auto-approved
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              labels: ['auto-approved']
+            });
+            
+            /*
+            // Merge the PR
+            const mergeResponse = await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: issue_number,
+              // Optional: Provide a merge commit message, title, or method if desired
+              // commit_title: 'Auto-merging PR',
+              // commit_message: 'Automatically merged by GitHub Actions',
+              // merge_method: 'merge' // Options are 'merge', 'squash', or 'rebase'
+            });
+            
+            if (!mergeResponse.data.merged) {
+              console.log('Failed to merge the PR:', mergeResponse.data.message);
+            } else {
+              // If merged, then delete the branch
+              const branchName = context.payload.pull_request.head.ref;
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `heads/${branchName}`
+              });
+              console.log(`Deleted branch: ${branchName}`);
+                            
+              console.log('PR successfully merged');
+            }
+            */
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Label PR for manual review
+      #   id: label-pr-for-manual-review
+      #   if: steps.check_results.outputs.approve == 'false' ||  steps.check_files_changed.outputs.approve == 'false'
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       const issue_number = context.issue.number;
+
+      #       // Add a label to indicate that manual review is required
+      #       await github.rest.issues.addLabels({
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         issue_number: issue_number,
+      #         labels: ['manual-review-required']
+      #       });
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

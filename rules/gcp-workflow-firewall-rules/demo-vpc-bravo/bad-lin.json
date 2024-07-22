@@ -1,0 +1,14 @@
+[
+  {
+    "id": "allow-tcp-443-ingr-iap-e",
+    "name": "allow-tcp-443-ingr-iap-e",
+    "description": "test",
+    "action": "ALLOW",
+    "direction": "INGRESS",
+    "log_config": "INCLUDE_ALL_METADATA",
+    "priority": 1000,
+    "sources": [],
+    "targets": [],
+    "rules": [{ "protocol": "TCP", "ports": ["443", "8443", "9090"] }]
+  }
+]
