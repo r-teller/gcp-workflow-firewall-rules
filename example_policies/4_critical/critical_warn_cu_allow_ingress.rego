@@ -18,7 +18,7 @@
 # environment. It works in conjunction with other policies to provide a multi-layered defense against various security
 # threats, emphasizing the importance of strict firewall rule management.
 
-package critical_upsert_allow_ingress
+package critical_warn_cu_allow_ingress
 
 import data.common
 
@@ -33,14 +33,30 @@ warn_contains_sensitive_ports[result] {
 	upper(resource.change.after.direction) == "INGRESS"
 	upper(common.rule_action(resource.change.after.allow[_])) == "ALLOW"
 
-	common.contains_sensitive_ports(resource.change.after)
+    sensistive_protocols := {protocols | protocols := common.sensitive_ports[_].protocol}
+    configured_protocols := {protocols | protocols := resource.change.after.allow[_].protocol}
+    protocols := sensistive_protocols | configured_protocols
 
+    sensitive_ports := {protocol:ports| protocol := sensistive_protocols[_];  ports := common.set_of_ports(common.sensitive_ports,protocol)}
+    configured_ports := {protocol:ports| protocol := protocols[_];  ports := common.set_of_ports(resource.change.after.allow,protocol)}
+
+	merged_set_of_configured_and_sensitive_ports := common.set_of_sensitive_ports(sensitive_ports,configured_ports,protocols)
+
+    # Create a message with sensitive ports
+    msg_sensitive_ports := concat(", ", [
+        sprintf("%s/%s", [protocol, port])
+        | protocol := protocols[_]
+        ; port := merged_set_of_configured_and_sensitive_ports[protocol][_]
+    ])
+
+	count(merged_set_of_configured_and_sensitive_ports) > 0
 	result := common.template_result(
 		"CRITICAL",
 		resource,
-		sprintf("Firewall Rule '%s' will be %s, and this change is considered high risk because (%s).", [
-			resource.change.after.name, common.action_description(action),
-			"allows one or more sensitive TCP and/or UDP ports and/or port-ranges",
+		sprintf("Firewall Rule '%s' will be %s, and this change is considered critical risk because one or more protocols and ports are considered sensitive [%s].", [
+			resource.change.after.name, 
+			common.action_description(action),
+			msg_sensitive_ports
 		]),
 	)
 }
