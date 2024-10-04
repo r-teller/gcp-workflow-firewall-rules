@@ -1,0 +1,35 @@
+[
+  {
+    "id": "allow-tcp-443-ingr-iap-e",
+    "name": "allow-tcp-443-ingr-iap-e",
+    "description": "test",
+    "action": "ALLOW",
+    "direction": "INGRESS",
+    "log_config": "INCLUDE_ALL_METADATA",
+    "priority": 1000,
+    "sources": ["35.235.240.0/20"],
+    "targets": [],
+    "rules": [
+      {
+        "protocol": "TCP",
+        "ports": ["443", "8443", "9090","80","8080"]
+      }
+    ]
+  },
+  {
+    "id": "allow-tcp-443-ingr-ext-e",
+    "name": "allow-tcp-443-ingr-ext-e",
+    "action": "ALLOW",
+    "direction": "INGRESS",
+    "log_config": "INCLUDE_ALL_METADATA",
+    "priority": 1000,
+    "sources": ["0.0.0.0/0"],
+    "targets": ["foo"],
+    "rules": [
+      {
+        "protocol": "TCP",
+        "ports": ["443", "8443"]
+      }
+    ]
+  }
+]
