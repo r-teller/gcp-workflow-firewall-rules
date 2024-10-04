@@ -1,0 +1,23 @@
+[
+    {
+        "id": "allow-tcp-22-ingress-tags-explicit",
+        "name": "allow-tcp-22-ingress-tags-explicit",
+        "description": "matches on OPA Policy [low_warn_cud_catch_all]",
+        "action": "allow",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [
+            "network-tag-goes-here"
+        ],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": [
+                    "22"
+                ]
+            }
+        ]
+    }
+]

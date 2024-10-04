@@ -14,7 +14,7 @@
 # Note: This rule is a critical component of a comprehensive security strategy aimed at minimizing the attack surface within
 # GCP environments. It complements other policies by focusing on high-risk configurations that require immediate attention.
 
-package high_upsert_allow_ingress
+package high_warn_cu_allow_ingress
 
 import data.common
 

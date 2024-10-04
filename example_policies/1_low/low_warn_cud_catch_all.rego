@@ -11,11 +11,11 @@
 # Note: While categorizing certain changes as low risk, this rule is part of a layered security approach. Other policies may
 # override this classification based on stricter criteria or additional context, ensuring an adaptive security posture.
 
-package low_cud_catch_all
+package low_warn_cud_catch_all
 
 import data.common
 
-warn_catch_all[result] {
+warn_cud_catch_all[result] {
 	resource := input.resource_changes[_]
 	resource.type == "google_compute_firewall"
 
@@ -26,6 +26,10 @@ warn_catch_all[result] {
 	result := common.template_result(
 		"LOW",
 		resource,
-		sprintf("Firewall Rule '%s' will be %s, and this change is considered low risk other policies may override this risk rating.", [common.select_resource_change(resource.change).name, common.action_description(action)]),
+		sprintf("Firewall Rule '%s' will be %s, and this change is considered low risk other policies may override this risk rating.", [
+			common.select_resource_change(resource.change).name, 
+			common.action_description(action)
+			]
+		),
 	)
 }

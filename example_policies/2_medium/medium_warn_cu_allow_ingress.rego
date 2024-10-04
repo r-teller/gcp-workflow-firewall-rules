@@ -12,7 +12,7 @@
 # Note: This rule is part of a set aimed at robust security in GCP environments, complementing others for a comprehensive
 # approach to cloud security.
 
-package medium_upsert_allow_ingress
+package medium_warn_cu_allow_ingress
 
 import data.common
 

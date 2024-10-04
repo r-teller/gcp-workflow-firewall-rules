@@ -4,31 +4,38 @@ This document provides a brief overview of each OPA validation rule within the p
 
 ## Low Risk Rules
 
-### [cud_catch_all.rego](./1_low/cud_catch_all.rego)
+### [low_warn_cud_catch_all.rego](./example_policies/1_low/low_warn_cud_catch_all.rego)
 - **Rule**: `warn_catch_all`
 - **Description**: Flags low-risk modifications, creations, and deletions of Google Compute Firewall rules, excluding no-ops.
 
 ## Medium Risk Rules
 
-### [upsert_allow_ingress.rego](./2_medium/upsert_allow_ingress.rego)
+### [medium_warn_cu_rules.rego](./example_policies/2_medium/medium_warn_cu_rules.rego)
+- **Rules**:
+  - `warn_not_trusted_port_rule`
+    - **Description**: Identifies changes allowing ingress traffic on untrusted protocols and ports, generating warnings for medium-risk configurations.
+  - `warn_not_trusted_source_rule`
+    - **Description**: Flags ingress traffic from untrusted source CIDR ranges, providing warnings for medium-risk changes.
+
+### [medium_warn_cu_allow_ingress.rego](./example_policies/2_medium/medium_warn_cu_allow_ingress.rego)
 - **Rule**: `warn_non_trusted_sources`
 - **Description**: Warns about firewall rules that permit ingress from non-trusted source ranges.
 
 ## High Risk Rules
 
-### [upsert_allow_ingress.rego](./3_high/upsert_allow_ingress.rego)
+### [high_warn_cu_allow_ingress.rego](./example_policies/3_high/high_warn_cu_allow_ingress.rego)
 - **Rule**: `warn_all_tcp_or_udp_ports`
 - **Description**: Identifies rules allowing all TCP/UDP ports, marking them as high risk.
 
 ## Critical Risk Rules
 
-### [upsert_allow_ingress.rego](./4_critical/upsert_allow_ingress.rego)
+### [critical_warn_cu_allow_ingress.rego](./example_policies/4_critical/critical_warn_cu_allow_ingress.rego)
 - **Rule**: `warn_contains_sensitive_ports`
 - **Description**: Flags rules allowing traffic on sensitive TCP/UDP ports as critical risks.
 
 ## Blocking Rules
 
-### [upsert_catch_all.rego](./5_blocking/upsert_catch_all.rego)
+### [blocking_deny_cu_catch_all.rego](./example_policies/5_blocking/blocking_deny_cu_catch_all.rego)
 - **Rules**:
   - `deny_incorrect_logging`
     - Blocks rules with unsupported logging configurations.

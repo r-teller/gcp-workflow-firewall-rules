@@ -1,0 +1,19 @@
+[
+  {
+    "id": "allow-tcp-all-ingress-rfc1918",
+    "name": "allow-tcp-all-ingress-rfc1918",
+    "description": "matches on OPA Policy [medium_warn_cu_rules,low_warn_cud_catch_all]",
+    "action": "allow",
+    "direction": "INGRESS",
+    "log_config": "INCLUDE_ALL_METADATA",
+    "priority": 1000,
+    "sources": ["192.168.0.0/16"],
+    "targets": [],
+    "rules": [
+      {
+        "protocol": "TCP",
+        "ports": []
+      }
+    ]
+  }
+]

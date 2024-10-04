@@ -1,0 +1,19 @@
+[
+  {
+    "id": "allow-tcp-22-ingress-all-explicit",
+    "name": "allow-tcp-22-ingress-all-explicit",
+    "description": "matches on OPA Policy [blocking_deny_cu_catch_all,low_warn_cud_catch_all]",
+    "action": "allow",
+    "direction": "INGRESS",
+    "log_config": "INCLUDE_ALL_METADATA",
+    "priority": 1000,
+    "sources": [],
+    "targets": [],
+    "rules": [
+      {
+        "protocol": "TCP",
+        "ports": ["22"]
+      }
+    ]
+  }
+]

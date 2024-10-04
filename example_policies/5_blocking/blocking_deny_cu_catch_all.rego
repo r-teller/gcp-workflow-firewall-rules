@@ -17,7 +17,7 @@
 # they can impact the cloud environment. They serve as a final checkpoint in a series of policies aimed at upholding high
 # security standards.
 
-package blocking_upsert_catch_all
+package blocking_deny_cu_catch_all
 
 import data.common
 

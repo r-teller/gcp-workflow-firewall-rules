@@ -2,6 +2,7 @@
     {
         "id": "allow-tcp-443-ingress-iap-explicit",
         "name": "allow-tcp-443-ingress-iap-explicit",
+        "description": "matches on OPA Policy [medium_warn_cu_rules,low_warn_cud_catch_all]",
         "action": "allow",
         "direction": "INGRESS",
         "log_config": "INCLUDE_ALL_METADATA",
