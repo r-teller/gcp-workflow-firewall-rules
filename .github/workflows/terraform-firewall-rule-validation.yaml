@@ -63,7 +63,7 @@ jobs:
             await script({github, context, core})
 
   firewall-rules-validation-schema-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - firewall-rules-validation-init
     outputs:
