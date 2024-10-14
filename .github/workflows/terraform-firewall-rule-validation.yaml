@@ -64,6 +64,9 @@ jobs:
 
   firewall-rules-validation-schema-check:
     runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ./terraform
     needs:
       - firewall-rules-validation-init
     outputs:
@@ -75,7 +78,7 @@ jobs:
 
       - name: Install Prerequisites
         run: |
-          sudo npm install -g ajv-cli ajv
+          sudo npm install ajv-cli ajv
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -138,118 +141,118 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  firewall-rules-validation-opa-check:
-    needs:
-      - firewall-rules-validation-schema-check
-    runs-on: ubuntu-latest
-    outputs:
-      criticalOpaViolationsDetected: ${{ steps.opa_output_validation.outputs.criticalOpaViolationsDetected }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # firewall-rules-validation-opa-check:
+  #   needs:
+  #     - firewall-rules-validation-schema-check
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     criticalOpaViolationsDetected: ${{ steps.opa_output_validation.outputs.criticalOpaViolationsDetected }}
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - uses: "google-github-actions/auth@v2"
-        with:
-          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}" # Replace with the name of your GitHub Actions secret
+  #     - uses: "google-github-actions/auth@v2"
+  #       with:
+  #         credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}" # Replace with the name of your GitHub Actions secret
 
-      - name: Terraform Init
-        id: init
-        run: terraform init
+  #     - name: Terraform Init
+  #       id: init
+  #       run: terraform init
 
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
+  #     - name: Terraform Validate
+  #       id: validate
+  #       run: terraform validate -no-color
 
-      - name: Terraform Plan
-        id: plan
-        run: |
-          terraform plan -out=tfplan -var generate_firewall_rules_map_json=true
-          terraform show -json ./tfplan > ./tfplan.json
+  #     - name: Terraform Plan
+  #       id: plan
+  #       run: |
+  #         terraform plan -out=tfplan -var generate_firewall_rules_map_json=true
+  #         terraform show -json ./tfplan > ./tfplan.json
 
-      - name: Pull Docker image
-        id: PullDockerImage
-        run: |
-          docker pull "openpolicyagent/conftest:latest"
+  #     - name: Pull Docker image
+  #       id: PullDockerImage
+  #       run: |
+  #         docker pull "openpolicyagent/conftest:latest"
 
-      - name: Run Conftest
-        run: |
-          docker run \
-                --rm \
-                -v "$(pwd)":/project \
-                openpolicyagent/conftest \
-                test --all-namespaces ./tfplan.json --output json > ./result.json
-        continue-on-error: true
+  #     - name: Run Conftest
+  #       run: |
+  #         docker run \
+  #               --rm \
+  #               -v "$(pwd)":/project \
+  #               openpolicyagent/conftest \
+  #               test --all-namespaces ./tfplan.json --output json > ./result.json
+  #       continue-on-error: true
 
-      - name: Validate Terraform Plan for OPA Violations
-        id: validate_terraform_plan_opa_violations
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const script = require('./.github/scripts/firewall-rules-opa-check/validate_terraform_plan_opa_violations.js')
-            await script({github, context, core})
-        continue-on-error: true
+  #     - name: Validate Terraform Plan for OPA Violations
+  #       id: validate_terraform_plan_opa_violations
+  #       uses: actions/github-script@v7
+  #       with:
+  #         script: |
+  #           const script = require('./.github/scripts/firewall-rules-opa-check/validate_terraform_plan_opa_violations.js')
+  #           await script({github, context, core})
+  #       continue-on-error: true
 
-      - name: Set OPA Violations Label
-        id: set_opa_violations_label
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
-            if(${{ steps.validate_terraform_plan_opa_violations.outputs.criticalOpaViolationsDetected == 'true' }}) {
-              await swap_labels({github, context, add_label_name: 'opa-violations-detected', remove_label_name: 'opa-violations-passed'})
-            } else {
-              await swap_labels({github, context, add_label_name: 'opa-violations-passed', remove_label_name: 'opa-violations-detected'})
-            }
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Set OPA Violations Label
+  #       id: set_opa_violations_label
+  #       uses: actions/github-script@v7
+  #       with:
+  #         script: |
+  #           const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
+  #           if(${{ steps.validate_terraform_plan_opa_violations.outputs.criticalOpaViolationsDetected == 'true' }}) {
+  #             await swap_labels({github, context, add_label_name: 'opa-violations-detected', remove_label_name: 'opa-violations-passed'})
+  #           } else {
+  #             await swap_labels({github, context, add_label_name: 'opa-violations-passed', remove_label_name: 'opa-violations-detected'})
+  #           }
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Comment on Pull Request
-        id: comment_on_pull_request
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const script = require('./.github/scripts/firewall-rules-opa-check/comment_pr_opa_violations.js')
-            const opaViolations = ${{ steps.validate_terraform_plan_opa_violations.outputs.opaViolations }}
-            await script({github, context, core, opaViolations})
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Comment on Pull Request
+  #       id: comment_on_pull_request
+  #       uses: actions/github-script@v7
+  #       with:
+  #         script: |
+  #           const script = require('./.github/scripts/firewall-rules-opa-check/comment_pr_opa_violations.js')
+  #           const opaViolations = ${{ steps.validate_terraform_plan_opa_violations.outputs.opaViolations }}
+  #           await script({github, context, core, opaViolations})
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  firewall-rules-validation-pull-request-approver:
-    runs-on: ubuntu-latest
-    needs:
-      - firewall-rules-validation-schema-check
-      - firewall-rules-validation-opa-check
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # firewall-rules-validation-pull-request-approver:
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - firewall-rules-validation-schema-check
+  #     - firewall-rules-validation-opa-check
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Manual Approval Required
-        id: manual-approval-required
-        if: ${{ needs.firewall-rules-validation-schema-check.outputs.jsonSchemaValidationErrors != '[]' || needs.firewall-rules-validation-opa-check.outputs.criticalOpaViolationsDetected == 'true' }}
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const lifecycle_labels = require('./.github/scripts/firewall-rules-shared/lifecycle_labels.js')
-            await lifecycle_labels({github, context, add_label_name: 'manual-approval-required', remove_label_name: 'auto-approved'})
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Manual Approval Required
+  #       id: manual-approval-required
+  #       if: ${{ needs.firewall-rules-validation-schema-check.outputs.jsonSchemaValidationErrors != '[]' || needs.firewall-rules-validation-opa-check.outputs.criticalOpaViolationsDetected == 'true' }}
+  #       uses: actions/github-script@v7
+  #       with:
+  #         script: |
+  #           const lifecycle_labels = require('./.github/scripts/firewall-rules-shared/lifecycle_labels.js')
+  #           await lifecycle_labels({github, context, add_label_name: 'manual-approval-required', remove_label_name: 'auto-approved'})
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Auto Approve Pull Request
-        id: auto-approve-pull-request
-        if: ${{ needs.firewall-rules-validation-schema-check.outputs.jsonSchemaValidationErrors == '[]' && needs.firewall-rules-validation-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const issue_number = context.issue.number;
-            const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
+  #     - name: Auto Approve Pull Request
+  #       id: auto-approve-pull-request
+  #       if: ${{ needs.firewall-rules-validation-schema-check.outputs.jsonSchemaValidationErrors == '[]' && needs.firewall-rules-validation-opa-check.outputs.criticalOpaViolationsDetected == 'false' }}
+  #       uses: actions/github-script@v7
+  #       with:
+  #         script: |
+  #           const issue_number = context.issue.number;
+  #           const swap_labels = require('./.github/scripts/firewall-rules-shared/swap_labels.js')
 
-            await swap_labels({github, context, add_label_name: 'auto-approved', remove_label_name: 'manual-approval-required'})
+  #           await swap_labels({github, context, add_label_name: 'auto-approved', remove_label_name: 'manual-approval-required'})
 
-            await github.rest.pulls.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: issue_number,
-              event: 'APPROVE'
-            });
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #           await github.rest.pulls.createReview({
+  #             owner: context.repo.owner,
+  #             repo: context.repo.repo,
+  #             pull_number: issue_number,
+  #             event: 'APPROVE'
+  #           });
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

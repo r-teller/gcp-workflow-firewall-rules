@@ -10,7 +10,7 @@ module.exports = async ({ github, context, core, changedFiles }) => {
   const badFiles = [];
 
   // Load the schema
-  const jsonSchemaPath = ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json";
+  const jsonSchemaPath = "./terraform/.terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json";
   const jsonSchema = JSON.parse(fs.readFileSync(jsonSchemaPath, "utf8"));
   const validate = ajv.compile(jsonSchema);
 
