@@ -79,6 +79,7 @@ jobs:
       - name: Install Prerequisites
         run: |
           npm install -g ajv-cli ajv
+          export NODE_PATH=$(npm root -g)
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
