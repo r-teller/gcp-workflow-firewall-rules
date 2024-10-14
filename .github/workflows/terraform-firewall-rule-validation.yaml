@@ -75,7 +75,7 @@ jobs:
 
       - name: Install Prerequisites
         run: |
-          sudo npm install ajv-cli ajv
+          sudo npm install -g ajv-cli ajv
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
