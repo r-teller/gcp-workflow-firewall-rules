@@ -64,9 +64,6 @@ jobs:
 
   firewall-rules-validation-schema-check:
     runs-on: ubuntu-24.04
-    defaults:
-      # run:
-      #   working-directory: ./terraform
     needs:
       - firewall-rules-validation-init
     outputs:
