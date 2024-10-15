@@ -65,8 +65,8 @@ jobs:
   firewall-rules-validation-schema-check:
     runs-on: ubuntu-24.04
     defaults:
-      run:
-        working-directory: ./terraform
+      # run:
+      #   working-directory: ./terraform
     needs:
       - firewall-rules-validation-init
     outputs:
@@ -78,8 +78,7 @@ jobs:
 
       - name: Install Prerequisites
         run: |
-          npm install -g ajv-cli ajv
-          export NODE_PATH=$(npm root -g)
+          npm install ajv-cli ajv
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -89,6 +88,7 @@ jobs:
 
       - name: Terraform Init
         id: init
+        working-directory: ./terraform
         run: terraform init -backend=false
 
       - name: JSON Lint & Schema Validation
@@ -97,6 +97,7 @@ jobs:
         with:
           script: |
             const script = require('./.github/scripts/firewall-rules-schema-check/validate_schema_changed_files.js')
+            const firewallRulesSchemaPath = "./terraform/.terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json"
             const changedFiles = ${{ needs.firewall-rules-validation-init.outputs.changedFiles }}
             await script({github, context, core, changedFiles})
         continue-on-error: true
