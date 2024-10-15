@@ -1,7 +1,7 @@
 const fs = require("fs");
 const Ajv = require("ajv");
 
-module.exports = async ({ github, context, core, changedFiles }) => {
+module.exports = async ({ github, context, core, changedFiles, firewallRulesSchemaPath }) => {
   const ajv = new Ajv({ allErrors: true, verbose: true });
   //   const changedFiles = JSON.parse(process.env.CHANGED_FILES);
 
@@ -10,8 +10,7 @@ module.exports = async ({ github, context, core, changedFiles }) => {
   const badFiles = [];
 
   // Load the schema
-  const jsonSchemaPath = ".terraform/modules/firewall_rules/schemas/resolved/resolved.schema.json";
-  const jsonSchema = JSON.parse(fs.readFileSync(jsonSchemaPath, "utf8"));
+  const jsonSchema = JSON.parse(fs.readFileSync(firewallRulesSchemaPath, "utf8"));
   const validate = ajv.compile(jsonSchema);
 
   for (const file of changedFiles) {
