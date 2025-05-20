@@ -175,14 +175,14 @@ jobs:
       - name: Pull Docker image
         id: PullDockerImage
         run: |
-          docker pull "openpolicyagent/conftest:latest"
+          docker pull "openpolicyagent/conftest:v0.60.0"
 
       - name: Run Conftest
         run: |
           docker run \
                 --rm \
                 -v "$(pwd)":/project \
-                openpolicyagent/conftest \
+                openpolicyagent/conftest:v0.60.0 \
                 test --all-namespaces ./tfplan.json --output json > ./result.json
         continue-on-error: true
 
