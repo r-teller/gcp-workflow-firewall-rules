@@ -1,7 +1,7 @@
 [
   {
-    "id": "allow-tcp-443-ingress-iap-explicit",
-    "name": "allow-tcp-443-ingress-iap-explicit",
+    "id": "allow-tcp-22-ingress-iap-explicit",
+    "name": "allow-tcp-22-ingress-iap-explicit",
     "description": "matches on OPA Policy [medium_warn_cu_rules,low_warn_cud_catch_all]",
     "action": "ALLOW",
     "direction": "INGRESS",
@@ -12,7 +12,7 @@
     "rules": [
       {
         "protocol": "TCP",
-        "ports": ["443"]
+        "ports": ["22"]
       }
     ]
   }
