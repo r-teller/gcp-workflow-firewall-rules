@@ -5,6 +5,8 @@
 # Local .terraform directories
 **/.terraform/*
 
+**/custom_constraints/*
+
 # .tfstate files
 *.tfstate
 *.tfstate.*
