@@ -8,7 +8,8 @@
         "log_config": "INCLUDE_ALL_METADATA",
         "priority": 1000,
         "sources": [
-            "35.235.240.0/20"
+            "35.235.240.0/20",
+            "1.2.3.4/32"
         ],
         "targets": [],
         "rules": [
