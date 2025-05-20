@@ -4,7 +4,7 @@ module.exports = async ({ github, context, core }) => {
   // Define the list of path prefixes you want to filter by
   const allowedPathPrefixes = [
     // Add more prefixes as needed
-    "rules/",
+    "terraform/firewall_rules/",
   ];
 
   // Define the list of file extensions you want to include

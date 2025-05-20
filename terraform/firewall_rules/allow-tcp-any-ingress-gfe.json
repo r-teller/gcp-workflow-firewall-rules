@@ -1,0 +1,20 @@
+[
+    {
+        "id": "allow-tcp-any-ingress",
+        "name": "allow-tcp-any-ingress-gfe-explicit",
+        "action": "ALLOW",
+        "direction": "INGRESS",
+        "log_config": "INCLUDE_ALL_METADATA",
+        "priority": 1000,
+        "sources": [
+            "130.211.0.0/22"
+        ],
+        "targets": [],
+        "rules": [
+            {
+                "protocol": "TCP",
+                "ports": []
+            }
+        ]
+    }
+]
