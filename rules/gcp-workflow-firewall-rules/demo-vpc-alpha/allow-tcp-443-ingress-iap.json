@@ -1,0 +1,19 @@
+[
+  {
+    "id": "allow-tcp-443-ingress-iap-explicit",
+    "name": "allow-tcp-443-ingress-iap-explicit",
+    "description": "matches on OPA Policy [medium_warn_cu_rules,low_warn_cud_catch_all]",
+    "action": "ALLOW",
+    "direction": "INGRESS",
+    "log_config": "INCLUDE_ALL_METADATA",
+    "priority": 1000,
+    "sources": ["35.235.240.0/20"],
+    "targets": [],
+    "rules": [
+      {
+        "protocol": "TCP",
+        "ports": ["443"]
+      }
+    ]
+  }
+]
